@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ property.name }} | Hommy Cottage Host{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('host.dashboard') }}">Host Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Edit Property</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-12">
+            
+            <!-- Property Header & Status Badge -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h3 class="fw-bold text-dark mb-0">{{ property.name }}</h3>
+                            {% if property.status == 'approved' %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Approved & Live
+                                </span>
+                            {% elif property.status == 'pending' %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1 rounded-pill">
+                                    <i class="bi bi-clock-history me-1"></i>Pending Review
+                                </span>
+                            {% elif property.status == 'rejected' %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1 rounded-pill">
+                                    <i class="bi bi-x-circle-fill me-1"></i>Rejected
+                                </span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted"><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ property.address }}, {{ property.pincode }}</small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('search.property_detail', property_id=property.property_id) }}" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold" target="_blank">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> Public Preview
+                        </a>
+                        <a href="{{ url_for('host.add_room_type', property_id=property.property_id) }}" class="btn btn-outline-success rounded-pill px-3 py-2 fw-semibold">
+                            <i class="bi bi-plus-circle me-1"></i> Add Room Type
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Edit Form -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white mb-4">
+                <form action="{{ url_for('host.edit_property', property_id=property.property_id) }}" method="POST" enctype="multipart/form-data">
+                    
+                    <!-- Section 1: Property Identity -->
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-info-circle text-success me-2"></i>1. Property Identity</h5>
+                    <div class="mb-3">
+                        <label for="edit-name" class="form-label small fw-bold text-muted">Property Name *</label>
+                        <input type="text" name="name" id="edit-name" value="{{ property.name }}" class="form-control rounded-3" required>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label for="edit-type" class="form-label small fw-bold text-muted">Property Category *</label>
+                            <select name="type_id" id="edit-type" class="form-select rounded-3" required>
+                                {% for pt in property_types %}
+                                    <option value="{{ pt.type_id }}" {% if property.type_id == pt.type_id %}selected{% endif %}>
+                                        {{ pt.type_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <label for="edit-city" class="form-label small fw-bold text-muted">Destination City *</label>
+                            <select name="city_id" id="edit-city" class="form-select rounded-3" required>
+                                {% for c in cities %}
+                                    <option value="{{ c.city_id }}" {% if property.city_id == c.city_id %}selected{% endif %}>
+                                        {{ c.city_name }} ({{ c.state }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="edit-desc" class="form-label small fw-bold text-muted">Description & Highlights *</label>
+                        <textarea name="description" id="edit-desc" rows="4" class="form-control rounded-3" required>{{ property.description }}</textarea>
+                    </div>
+
+                    <!-- Section 2: Address -->
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt text-danger me-2"></i>2. Location</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-8 col-12">
+                            <label for="edit-addr" class="form-label small fw-bold text-muted">Street Address Line *</label>
+                            <input type="text" name="address" id="edit-addr" value="{{ property.address }}" class="form-control rounded-3" required>
+                        </div>
+                        <div class="col-md-4 col-12">
+                            <label for="edit-pin" class="form-label small fw-bold text-muted">Pincode *</label>
+                            <input type="text" name="pincode" id="edit-pin" value="{{ property.pincode }}" class="form-control rounded-3" required>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Amenities Checkboxes -->
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-check2-square text-warning me-2"></i>3. Amenities & Facilities</h5>
+                    <div class="row g-2 mb-4 p-3 bg-light rounded-3 border">
+                        {% for a in amenities %}
+                            <div class="col-md-4 col-sm-6 col-12">
+                                <div class="form-check small py-1">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="{{ a.amenity_id }}" id="amenity_{{ a.amenity_id }}"
+                                        {% if a.amenity_id in current_amenity_ids %}checked{% endif %}>
+                                    <label class="form-check-label text-dark fw-medium" for="amenity_{{ a.amenity_id }}">
+                                        <i class="bi bi-check-circle-fill text-success me-1"></i> {{ a.amenity_name }}
+                                    </label>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Section 4: Current Photos & Primary Image Selection -->
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-images text-info me-2"></i>4. Manage Property Photos</h5>
+                    <div class="p-3 bg-light rounded-3 border mb-4">
+                        <p class="small text-muted mb-3">Select the radio button next to an image to set it as the primary photo shown on search cards:</p>
+                        
+                        <div class="row g-3 mb-3">
+                            {% for img in images %}
+                                <div class="col-md-4 col-sm-6 col-12">
+                                    <div class="card h-100 border shadow-sm rounded-3 overflow-hidden position-relative">
+                                        <img src="{{ img.image_url }}" alt="Property Photo" style="height: 140px; object-fit: cover;" class="card-img-top">
+                                        <div class="card-body p-2 d-flex align-items-center justify-content-between bg-white">
+                                            <div class="form-check mb-0 small">
+                                                <input class="form-check-input" type="radio" name="primary_image_id" value="{{ img.image_id }}" id="prim_{{ img.image_id }}" {% if img.is_primary %}checked{% endif %}>
+                                                <label class="form-check-label fw-semibold text-dark" for="prim_{{ img.image_id }}">
+                                                    {% if img.is_primary %}
+                                                        <span class="text-success"><i class="bi bi-star-fill text-warning me-1"></i>Primary</span>
+                                                    {% else %}
+                                                        Set Primary
+                                                    {% endif %}
+                                                </label>
+                                            </div>
+                                            {% if not img.is_primary and images|length > 1 %}
+                                                <form action="{{ url_for('host.delete_property_image', property_id=property.property_id, image_id=img.image_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Remove this image?');">
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" title="Delete Photo">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="col-12 text-muted small text-center py-2">
+                                    No photos uploaded yet. Upload images below.
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Upload Additional Photos -->
+                        <div class="border-top pt-3 mt-2">
+                            <label for="edit-images" class="form-label small fw-bold text-dark">Upload Additional Photos</label>
+                            <input type="file" name="images" id="edit-images" class="form-control rounded-3" accept=".jpg,.jpeg,.png" multiple>
+                            <div class="form-text small">
+                                <i class="bi bi-info-circle me-1"></i>Only JPG and PNG formats are allowed. Maximum 4 MB per file.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                        <a href="{{ url_for('host.dashboard') }}" class="btn btn-light rounded-pill px-4 py-2 fw-semibold">Back to Dashboard</a>
+                        <button type="submit" class="btn btn-hc-primary rounded-pill px-5 py-2 fw-bold shadow-sm">
+                            <i class="bi bi-check2-circle me-1"></i> Save Property Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Section 5: Room Types & Physical Rooms Management -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+                <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
+                    <div>
+                        <h4 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-door-open-fill text-success me-2"></i>Room Types & Inventory
+                        </h4>
+                        <small class="text-muted">Configure room types with automated room numbering and capacity limits</small>
+                    </div>
+                    <a href="{{ url_for('host.add_room_type', property_id=property.property_id) }}" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i> Add Room Type
+                    </a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 table-hc">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Room Type</th>
+                                <th>Max Capacity</th>
+                                <th>Price / Night</th>
+                                <th>Rooms Generated</th>
+                                <th>Allocated Room Numbers</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rt in room_types %}
+                                <tr>
+                                    <td class="fw-bold text-dark">{{ rt.type_name }}</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="bi bi-people-fill text-primary me-1"></i>{{ rt.capacity }} Guest{{ 's' if rt.capacity > 1 else '' }}
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold text-success">{{ rt.price_per_night|currency_inr }}</td>
+                                    <td>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill fw-bold">
+                                            {{ rt.room_count }} Room{{ 's' if rt.room_count != 1 else '' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="font-monospace text-muted">{{ rt.room_numbers or 'None' }}</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ url_for('host.edit_room_type', room_type_id=rt.room_type_id) }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                            <i class="bi bi-pencil me-1"></i> Edit & Rooms
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        No room types configured yet. You must add at least one room type for this property to be bookable.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

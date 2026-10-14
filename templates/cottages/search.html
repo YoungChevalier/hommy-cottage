@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Search & Compare Cottages | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Top Search Filter Bar -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+        <form action="{{ url_for('search.search') }}" method="GET" class="row g-2 align-items-center">
+            <div class="col-lg-3 col-md-6 col-12">
+                <label class="search-field-label small text-muted fw-bold mb-1">
+                    <i class="bi bi-geo-alt-fill text-danger me-1"></i> Destination
+                </label>
+                <input type="text" name="city" value="{{ city }}" class="form-control form-control-sm rounded-3 py-2 fw-semibold" placeholder="City or region">
+            </div>
+
+            <div class="col-lg-2 col-md-3 col-6">
+                <label class="search-field-label small text-muted fw-bold mb-1">
+                    <i class="bi bi-calendar-event text-primary me-1"></i> Check In
+                </label>
+                <input type="date" name="check_in" id="check_in_date" value="{{ check_in }}" class="form-control form-control-sm rounded-3 py-2">
+            </div>
+
+            <div class="col-lg-2 col-md-3 col-6">
+                <label class="search-field-label small text-muted fw-bold mb-1">
+                    <i class="bi bi-calendar-check text-success me-1"></i> Check Out
+                </label>
+                <input type="date" name="check_out" id="check_out_date" value="{{ check_out }}" class="form-control form-control-sm rounded-3 py-2">
+            </div>
+
+            <div class="col-lg-2 col-md-6 col-6">
+                <label class="search-field-label small text-muted fw-bold mb-1">
+                    <i class="bi bi-people-fill text-warning me-1"></i> Guests
+                </label>
+                <select name="guests" class="form-select form-select-sm rounded-3 py-2 fw-semibold">
+                    <option value="" {% if not guests %}selected{% endif %}>Any Guests</option>
+                    <option value="1" {% if guests == '1' %}selected{% endif %}>1 Guest</option>
+                    <option value="2" {% if guests == '2' %}selected{% endif %}>2 Guests</option>
+                    <option value="4" {% if guests == '4' %}selected{% endif %}>4 Guests</option>
+                    <option value="6" {% if guests == '6' %}selected{% endif %}>6+ Guests</option>
+                </select>
+            </div>
+
+            <div class="col-lg-3 col-md-6 col-6 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-hc-primary w-100 py-2 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2">
+                    <i class="bi bi-search"></i> Update Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Main Results & Filter Layout -->
+    <div class="row g-4">
+        <!-- Sidebar Filters -->
+        <div class="col-lg-3 col-md-4 col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white sticky-top" style="top: 5rem; z-index: 10;">
+                <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                    <h6 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-sliders text-success me-2"></i>Filters
+                    </h6>
+                    <a href="{{ url_for('search.search') }}" class="text-danger small fw-semibold">Reset</a>
+                </div>
+
+                <form action="{{ url_for('search.search') }}" method="GET" id="sidebar-filter-form">
+                    <!-- Carry forward search parameters -->
+                    <input type="hidden" name="city" value="{{ city }}">
+                    <input type="hidden" name="check_in" value="{{ check_in }}">
+                    <input type="hidden" name="check_out" value="{{ check_out }}">
+                    <input type="hidden" name="guests" value="{{ guests }}">
+                    <input type="hidden" name="sort" value="{{ sort_by }}">
+
+                    <!-- Price Filter -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted mb-2">Price Per Night (₹)</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="number" name="min_price" value="{{ min_price }}" class="form-control form-control-sm rounded-2" placeholder="Min" min="0" step="500">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" name="max_price" value="{{ max_price }}" class="form-control form-control-sm rounded-2" placeholder="Max" min="0" step="500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Min Rating Filter -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted mb-2">Minimum Rating</label>
+                        <select name="min_rating" class="form-select form-select-sm rounded-2">
+                            <option value="">Any Rating</option>
+                            <option value="4.5" {% if min_rating == '4.5' %}selected{% endif %}>4.5+ ★ Superior</option>
+                            <option value="4.0" {% if min_rating == '4.0' %}selected{% endif %}>4.0+ ★ Highly Rated</option>
+                            <option value="3.5" {% if min_rating == '3.5' %}selected{% endif %}>3.5+ ★ Good</option>
+                            <option value="3.0" {% if min_rating == '3.0' %}selected{% endif %}>3.0+ ★ Average</option>
+                        </select>
+                    </div>
+
+                    <!-- Property Type Filter -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted mb-2">Property Type</label>
+                        <select name="property_type" class="form-select form-select-sm rounded-2">
+                            <option value="">All Categories</option>
+                            {% for pt in property_types %}
+                                <option value="{{ pt }}" {% if property_type == pt %}selected{% endif %}>{{ pt }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Amenities Checklist (Relational Division) -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted mb-2">Comfort & Amenities (Must match ALL)</label>
+                        <div class="d-flex flex-column gap-2" style="max-height: 220px; overflow-y: auto;">
+                            {% for amenity in amenities %}
+                                <div class="form-check small">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="{{ amenity.amenity_id }}" id="amenity_{{ amenity.amenity_id }}" {% if amenity.amenity_id in selected_amenities %}checked{% endif %}>
+                                    <label class="form-check-label text-dark" for="amenity_{{ amenity.amenity_id }}">
+                                        <i class="bi bi-check2-circle me-1 text-secondary"></i> {{ amenity.amenity_name }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-hc-primary btn-sm w-100 rounded-3 fw-bold py-2 mt-2">
+                        Apply Filters
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Cottage Results Column -->
+        <div class="col-lg-9 col-md-8 col-12">
+            <!-- Header bar with count and sort -->
+            <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 bg-white p-3 rounded-4 shadow-sm border">
+                <div>
+                    <h5 class="fw-bold mb-0 text-dark">
+                        {{ total_results }} Cottage{{ 's' if total_results != 1 else '' }} Available
+                    </h5>
+                    {% if city %}
+                        <small class="text-muted">Showing results for "{{ city }}"</small>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex align-items-center gap-2 mt-2 mt-sm-0">
+                    <label class="small text-muted fw-semibold mb-0 text-nowrap">Sort By:</label>
+                    <select class="form-select form-select-sm rounded-pill fw-semibold" style="width: auto;" onchange="location = this.value;">
+                        <option value="{{ url_for('search.search', city=city, check_in=check_in, check_out=check_out, guests=guests, min_price=min_price, max_price=max_price, min_rating=min_rating, property_type=property_type, sort='rating') }}" {% if sort_by in ('rating', 'rating_desc') %}selected{% endif %}>Highest Rated</option>
+                        <option value="{{ url_for('search.search', city=city, check_in=check_in, check_out=check_out, guests=guests, min_price=min_price, max_price=max_price, min_rating=min_rating, property_type=property_type, sort='price_asc') }}" {% if sort_by == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+                        <option value="{{ url_for('search.search', city=city, check_in=check_in, check_out=check_out, guests=guests, min_price=min_price, max_price=max_price, min_rating=min_rating, property_type=property_type, sort='price_desc') }}" {% if sort_by == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Cottages List -->
+            {% if properties %}
+                <div class="row g-4">
+                    {% for cottage in properties %}
+                        <div class="col-lg-6 col-12">
+                            <div class="cottage-card" id="search-card-{{ cottage.property_id }}">
+                                <div class="cottage-img-wrapper">
+                                    <img src="{{ cottage.primary_image }}" alt="{{ cottage.property_name }}" loading="lazy" onerror="this.onerror=null;this.src='/static/img/sample/default.jpg';">
+                                    <span class="badge-property-type">{{ cottage.type_name }}</span>
+                                    <span class="badge-rating">
+                                        <i class="bi bi-star-fill"></i>
+                                        {{ "%.1f"|format(cottage.avg_rating) if cottage.avg_rating > 0 else "New" }}
+                                        {% if cottage.review_count > 0 %}
+                                            <span class="text-muted small">({{ cottage.review_count }})</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+
+                                <div class="cottage-card-body">
+                                    <h5 class="cottage-card-title">
+                                        <a href="{{ url_for('search.property_detail', property_id=cottage.property_id, check_in=check_in, check_out=check_out, guests=guests) }}">{{ cottage.property_name }}</a>
+                                    </h5>
+                                    <div class="cottage-location">
+                                        <i class="bi bi-geo-alt-fill text-danger"></i>
+                                        <span>{{ cottage.city_name }}, {{ cottage.state }}</span>
+                                    </div>
+
+                                    <div class="cottage-specs">
+                                        <span><i class="bi bi-people me-1"></i>Max {{ cottage.max_guests or 4 }} Guests</span>
+                                        <span><i class="bi bi-building me-1"></i>{{ cottage.type_name }}</span>
+                                    </div>
+
+                                    <div class="cottage-price-box">
+                                        <div>
+                                            <span class="price-amount">{{ cottage.starting_price|currency_inr }}</span>
+                                            <span class="price-unit">/ night starting</span>
+                                        </div>
+                                        <a href="{{ url_for('search.property_detail', property_id=cottage.property_id, check_in=check_in, check_out=check_out, guests=guests) }}" class="btn btn-sm btn-hc-primary rounded-pill px-3 fw-semibold">
+                                            View & Book
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination (9 per page) -->
+                {% if total_pages > 1 %}
+                    <nav aria-label="Search results pagination" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('search.search', page=page-1, city=city, check_in=check_in, check_out=check_out, guests=guests, min_price=min_price, max_price=max_price, min_rating=min_rating, property_type=property_type, sort=sort_by) }}">&laquo; Previous</a>
+                            </li>
+                            {% for p in range(1, total_pages + 1) %}
+                                <li class="page-item {% if p == page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('search.search', page=p, city=city, check_in=check_in, check_out=check_out, guests=guests, min_price=min_price, max_price=max_price, min_rating=min_rating, property_type=property_type, sort=sort_by) }}">{{ p }}</a>
+                                </li>
+                            {% endfor %}
+                            <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('search.search', page=page+1, city=city, check_in=check_in, check_out=check_out, guests=guests, min_price=min_price, max_price=max_price, min_rating=min_rating, property_type=property_type, sort=sort_by) }}">Next &raquo;</a>
+                            </li>
+                        </ul>
+                    </nav>
+                {% endif %}
+
+            {% else %}
+                <!-- Empty State -->
+                <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white my-4" id="empty-state-card">
+                    <div class="stat-icon mx-auto mb-3" style="width: 70px; height: 70px; font-size: 2rem;">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <h4 class="fw-bold">No cottages match your criteria</h4>
+                    <p class="text-muted small max-w-md mx-auto mb-4">
+                        {{ empty_message or "We couldn't find any approved cottages matching your chosen destination, date window, or price filters. Try widening your price range or clearing amenities." }}
+                    </p>
+                    <div>
+                        <a href="{{ url_for('search.search') }}" class="btn btn-hc-primary rounded-pill px-4 py-2 fw-semibold">
+                            Clear All Filters
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}User Account Directory | Admin | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">User Directory</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">User Account Directory & Oversight</h2>
+            <p class="text-muted small mb-0">Browse platform users, monitor role allocations, and activate or deactivate host accounts</p>
+        </div>
+
+        <!-- Role Filter Buttons -->
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="{{ url_for('admin.users_list') }}" class="btn {{ 'btn-dark fw-bold' if not selected_role else 'btn-outline-dark' }}">
+                All Users ({{ counts.all }})
+            </a>
+            <a href="{{ url_for('admin.users_list', role='host') }}" class="btn {{ 'btn-success fw-bold' if selected_role == 'host' else 'btn-outline-dark' }}">
+                <i class="bi bi-house-door me-1"></i>Hosts ({{ counts.host }})
+            </a>
+            <a href="{{ url_for('admin.users_list', role='guest') }}" class="btn {{ 'btn-primary fw-bold' if selected_role == 'guest' else 'btn-outline-dark' }}">
+                <i class="bi bi-person me-1"></i>Guests ({{ counts.guest }})
+            </a>
+            <a href="{{ url_for('admin.users_list', role='admin') }}" class="btn {{ 'btn-danger fw-bold' if selected_role == 'admin' else 'btn-outline-dark' }}">
+                <i class="bi bi-shield-lock me-1"></i>Admins ({{ counts.admin }})
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 table-hc">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;">ID</th>
+                        <th>User Name & Contact</th>
+                        <th>Account Role</th>
+                        <th>Activity Status</th>
+                        <th>Properties / Stays</th>
+                        <th>Member Since</th>
+                        <th class="text-end" style="min-width: 200px;">Account Controls</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                        <tr class="{{ 'table-secondary opacity-75' if not u.is_active else '' }}">
+                            <td class="font-monospace small text-muted">#{{ u.user_id }}</td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ u.name }}</div>
+                                <div class="small text-muted"><i class="bi bi-envelope me-1"></i>{{ u.email }}</div>
+                                <div class="small text-muted"><i class="bi bi-telephone me-1"></i>{{ u.phone }}</div>
+                            </td>
+                            <td>
+                                {% if u.role == 'admin' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1 rounded-pill fw-bold">Admin</span>
+                                {% elif u.role == 'host' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill fw-bold">Host</span>
+                                {% else %}
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill fw-bold">Guest</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.is_active %}
+                                    <span class="badge bg-success text-white rounded-pill px-3 py-1">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Active
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger text-white rounded-pill px-3 py-1">
+                                        <i class="bi bi-slash-circle me-1"></i>Deactivated
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.role == 'host' %}
+                                    <span class="badge bg-light text-dark border">
+                                        {{ u.properties_count }} Propert{{ 'ies' if u.properties_count != 1 else 'y' }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border">
+                                        {{ u.bookings_count }} Booking{{ 's' if u.bookings_count != 1 else '' }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted">{{ u.created_at|format_date }}</td>
+                            <td class="text-end">
+                                <div class="d-inline-flex align-items-center gap-2 justify-content-end">
+                                    <!-- Activate / Deactivate Host Form (POST ONLY) -->
+                                    {% if u.user_id != session.get('user_id') %}
+                                        <form action="{{ url_for('admin.toggle_user_status', user_id=u.user_id) }}" method="POST" class="d-inline"
+                                              onsubmit="return confirm('{{ 'Deactivate' if u.is_active else 'Reactivate' }} account for {{ u.name }}?');">
+                                            {% if u.is_active %}
+                                                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3" title="Deactivate Account">
+                                                    <i class="bi bi-person-x me-1"></i>Deactivate
+                                                </button>
+                                            {% else %}
+                                                <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3" title="Reactivate Account">
+                                                    <i class="bi bi-person-check me-1"></i>Activate
+                                                </button>
+                                            {% endif %}
+                                        </form>
+                                    {% else %}
+                                        <span class="badge bg-light text-muted border px-2 py-1 small">Current Admin</span>
+                                    {% endif %}
+
+                                    <!-- Role changer dropdown -->
+                                    {% if u.user_id != session.get('user_id') %}
+                                        <form action="{{ url_for('admin.change_role', user_id=u.user_id) }}" method="POST" class="d-inline-flex gap-1 align-items-center">
+                                            <select name="new_role" class="form-select form-select-sm rounded-pill" style="width: 95px; font-size: 0.75rem;">
+                                                <option value="guest" {% if u.role == 'guest' %}selected{% endif %}>Guest</option>
+                                                <option value="host" {% if u.role == 'host' %}selected{% endif %}>Host</option>
+                                                <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Admin</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-light btn-sm border rounded-circle p-1" title="Apply Role Change">
+                                                <i class="bi bi-arrow-repeat text-dark"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">No users found matching the filter criteria.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8 col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+                <div class="text-center mb-4">
+                    <a href="{{ url_for('main.index') }}" class="d-inline-block mb-3" title="Hommy Cottage Home">
+                        <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="Hommy Cottage Logo" class="hc-auth-logo">
+                    </a>
+                    <h3 class="fw-bold text-dark mb-1">Create an Account</h3>
+                    <p class="text-muted small">Join Hommy Cottage to book unique stays or list your property</p>
+                </div>
+
+                <form action="{{ url_for('auth.register') }}" method="POST">
+                    <!-- Role Selection -->
+                    <div class="mb-4 text-center">
+                        <label class="form-label small fw-bold text-muted d-block mb-2">I want to:</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="role" id="role-guest" value="guest" {% if not role or role == 'guest' %}checked{% endif %}>
+                            <label class="btn btn-outline-success py-2 fw-semibold" for="role-guest">
+                                <i class="bi bi-suitcase-lg me-1"></i> Book Cottages (Guest)
+                            </label>
+
+                            <input type="radio" class="btn-check" name="role" id="role-host" value="host" {% if role == 'host' %}checked{% endif %}>
+                            <label class="btn btn-outline-success py-2 fw-semibold" for="role-host">
+                                <i class="bi bi-house-add me-1"></i> List My Cottage (Host)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reg-name" class="form-label small fw-bold text-muted">Full Name</label>
+                        <input type="text" name="full_name" id="reg-name" value="{{ full_name or '' }}" class="form-control rounded-3" placeholder="e.g. Rahul Sharma" required>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label for="reg-email" class="form-label small fw-bold text-muted">Email Address</label>
+                            <input type="email" name="email" id="reg-email" value="{{ email or '' }}" class="form-control rounded-3" placeholder="name@example.com" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="reg-phone" class="form-label small fw-bold text-muted">Phone Number</label>
+                            <input type="tel" name="phone" id="reg-phone" value="{{ phone or '' }}" class="form-control rounded-3" placeholder="+91 9876543210" required>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-4">
+                        <div class="col-md-6">
+                            <label for="reg-password" class="form-label small fw-bold text-muted">Password (min 6 chars)</label>
+                            <input type="password" name="password" id="reg-password" class="form-control rounded-3" placeholder="••••••••" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="reg-confirm" class="form-label small fw-bold text-muted">Confirm Password</label>
+                            <input type="password" name="confirm_password" id="reg-confirm" class="form-control rounded-3" placeholder="••••••••" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-hc-primary w-100 py-2 rounded-pill fw-bold fs-6 shadow-sm mb-3">
+                        Register Account
+                    </button>
+                </form>
+
+                <div class="text-center small text-muted">
+                    Already have an account? 
+                    <a href="{{ url_for('auth.login') }}" class="fw-bold text-success">Sign in</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

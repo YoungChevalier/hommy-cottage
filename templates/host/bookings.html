@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Guest Bookings | Host Portal | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('host.dashboard') }}">Host Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Guest Reservations</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">Cottage Reservations Ledger</h2>
+            <p class="text-muted small mb-0">Powered by <code>upcoming_bookings_view</code> with zero data leakage across host accounts</p>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fs-6 fw-bold">
+                <i class="bi bi-calendar-check-fill me-1"></i> {{ upcoming_bookings|length }} Upcoming
+            </span>
+            <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill fs-6">
+                {{ (upcoming_bookings|length) + (past_bookings|length) }} Total Records
+            </span>
+        </div>
+    </div>
+
+    <!-- Nav Tabs: Upcoming vs Past -->
+    <ul class="nav nav-pills mb-4 gap-2" id="bookingsTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active rounded-pill px-4 py-2 fw-bold" id="upcoming-tab" data-bs-toggle="pill" data-bs-target="#upcoming" type="button" role="tab" aria-controls="upcoming" aria-selected="true">
+                <i class="bi bi-clock-history me-1"></i> Upcoming Confirmed (View)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill px-4 py-2 fw-semibold" id="past-tab" data-bs-toggle="pill" data-bs-target="#past" type="button" role="tab" aria-controls="past" aria-selected="false">
+                <i class="bi bi-archive me-1"></i> Past & Cancelled ({{ past_bookings|length }})
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="bookingsTabContent">
+        <!-- Upcoming Tab -->
+        <div class="tab-pane fade show active" id="upcoming" role="tabpanel" aria-labelledby="upcoming-tab">
+            <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+                <div class="card-header bg-white border-bottom p-3 d-flex align-items-center justify-content-between">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-calendar2-check-fill text-success me-2"></i>Active & Future Guest Reservations
+                    </h5>
+                    <span class="badge bg-light text-muted border font-monospace">MySQL View: upcoming_bookings_view</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 table-hc">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ref #</th>
+                                <th>Property</th>
+                                <th>Room Allocated</th>
+                                <th>Guest Info</th>
+                                <th>Dates</th>
+                                <th>Guests</th>
+                                <th>Total Amount</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b in upcoming_bookings %}
+                                <tr>
+                                    <td>
+                                        <span class="font-monospace fw-bold text-dark small bg-light p-1 px-2 rounded border">
+                                            #{{ b.booking_id }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('search.property_detail', property_id=b.property_id) }}" class="fw-semibold text-dark text-decoration-none">
+                                            {{ b.property_name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark small">{{ b.room_type }}</div>
+                                        <small class="text-muted">Room: <span class="font-monospace fw-bold text-primary">{{ b.room_number }}</span></small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark small">{{ b.guest_name }}</div>
+                                        <div class="text-muted small"><i class="bi bi-telephone me-1"></i>{{ b.guest_phone }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="small fw-semibold text-dark">{{ b.check_in|format_date }} &rarr; {{ b.check_out|format_date }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">{{ b.guests }} Guest{{ 's' if b.guests > 1 else '' }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-success">{{ b.amount|currency_inr }}</span>
+                                    </td>
+                                    <td>
+                                        {% if b.payment_status == 'success' %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Paid
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-1">
+                                                {{ b.payment_status|capitalize if b.payment_status else 'Pending' }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                                            {{ b.booking_status|capitalize }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center py-5 text-muted">
+                                        <i class="bi bi-calendar-x display-4 text-secondary mb-2 d-block"></i>
+                                        <h5 class="fw-bold text-dark">No upcoming reservations found</h5>
+                                        <p class="small text-muted mb-0">When guests book rooms at your listed properties, they will appear here automatically.</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Past Tab -->
+        <div class="tab-pane fade" id="past" role="tabpanel" aria-labelledby="past-tab">
+            <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+                <div class="card-header bg-white border-bottom p-3">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-clock-history text-secondary me-2"></i>Historical & Completed Reservations
+                    </h5>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 table-hc">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ref #</th>
+                                <th>Property</th>
+                                <th>Room</th>
+                                <th>Guest Info</th>
+                                <th>Dates</th>
+                                <th>Total Amount</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b in past_bookings %}
+                                <tr>
+                                    <td>
+                                        <span class="font-monospace text-dark small">#{{ b.booking_id }}</span>
+                                    </td>
+                                    <td class="fw-semibold text-dark">{{ b.property_name }}</td>
+                                    <td>
+                                        <small class="text-muted">{{ b.room_type }} ({{ b.room_number }})</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark small">{{ b.guest_name }}</div>
+                                        <small class="text-muted">{{ b.guest_phone }}</small>
+                                    </td>
+                                    <td class="small text-muted">{{ b.check_in|format_date }} &rarr; {{ b.check_out|format_date }}</td>
+                                    <td class="fw-bold text-dark">{{ b.amount|currency_inr }}</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">{{ b.payment_status|capitalize }}</span>
+                                    </td>
+                                    <td>
+                                        {% if b.booking_status == 'confirmed' %}
+                                            <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1">Completed</span>
+                                        {% elif b.booking_status == 'cancelled' %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1">Cancelled</span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark border rounded-pill px-2 py-1">{{ b.booking_status|capitalize }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-5 text-muted">
+                                        No past or cancelled bookings on record.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

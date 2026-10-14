@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}My Bookings | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">My Reservations</h2>
+            <p class="text-muted small mb-0">Track your upcoming stays, past trips, cancel reservations or write stay reviews.</p>
+        </div>
+        <a href="{{ url_for('search.search') }}" class="btn btn-hc-primary btn-sm rounded-pill px-4 py-2 fw-semibold">
+            <i class="bi bi-search me-1"></i> Discover Cottages
+        </a>
+    </div>
+
+    <!-- Booking Navigation Tabs: Upcoming vs Past -->
+    <ul class="nav nav-pills mb-4" id="bookingTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active rounded-pill px-4 fw-semibold" id="upcoming-tab" data-bs-toggle="pill" data-bs-target="#upcoming-pane" type="button" role="tab" aria-controls="upcoming-pane" aria-selected="true">
+                <i class="bi bi-calendar-check me-1"></i> Upcoming Stays ({{ upcoming_bookings|length }})
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill px-4 fw-semibold" id="past-tab" data-bs-toggle="pill" data-bs-target="#past-pane" type="button" role="tab" aria-controls="past-pane" aria-selected="false">
+                <i class="bi bi-clock-history me-1"></i> Past & Cancelled Stays ({{ past_bookings|length }})
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="bookingTabsContent">
+        <!-- Upcoming Stays Tab Pane -->
+        <div class="tab-pane fade show active" id="upcoming-pane" role="tabpanel" aria-labelledby="upcoming-tab">
+            {% if upcoming_bookings %}
+                <div class="d-flex flex-column gap-3">
+                    {% for b in upcoming_bookings %}
+                        <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white" id="booking-card-{{ b.booking_id }}">
+                            <div class="row g-3 align-items-center">
+                                <!-- Property Thumbnail -->
+                                <div class="col-md-3 col-12">
+                                    <img src="{{ b.primary_image }}" alt="{{ b.property_name }}" class="rounded-3 w-100" style="height: 140px; object-fit: cover;">
+                                </div>
+
+                                <!-- Reservation Details -->
+                                <div class="col-md-6 col-12">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge font-monospace bg-light text-dark border small">ID #{{ b.booking_id }}</span>
+                                        <span class="badge font-monospace bg-secondary bg-opacity-10 text-secondary border small">{{ b.booking_code }}</span>
+                                        {% if b.booking_status == 'confirmed' %}
+                                            <span class="badge badge-status-confirmed">Confirmed</span>
+                                        {% else %}
+                                            <span class="badge badge-status-cancelled">Cancelled</span>
+                                        {% endif %}
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle">
+                                            Payment: {{ b.payment_status or 'Success' }}
+                                        </span>
+                                    </div>
+
+                                    <h5 class="fw-bold text-dark mb-1">
+                                        <a href="{{ url_for('search.property_detail', property_id=b.property_id) }}" class="text-decoration-none text-dark">
+                                            {{ b.property_name }}
+                                        </a>
+                                    </h5>
+                                    <div class="text-muted small mb-2">
+                                        <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ b.city }}, {{ b.state }} &bull;
+                                        <span class="text-primary fw-semibold">{{ b.room_type_name }} (Room {{ b.room_number }})</span>
+                                    </div>
+
+                                    <div class="small text-secondary d-flex flex-wrap gap-3">
+                                        <span><i class="bi bi-calendar-event me-1"></i>{{ b.check_in|format_date }} &rarr; {{ b.check_out|format_date }}</span>
+                                        <span><i class="bi bi-moon me-1"></i>{{ b.nights }} Night{{ 's' if b.nights > 1 else '' }}</span>
+                                        <span><i class="bi bi-people me-1"></i>{{ b.guests }} Guest{{ 's' if b.guests > 1 else '' }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Price & Action Column -->
+                                <div class="col-md-3 col-12 text-md-end border-top border-md-top-0 pt-3 pt-md-0">
+                                    <div class="mb-2">
+                                        <span class="text-muted small d-block">Total Paid</span>
+                                        <span class="fs-4 fw-bold text-success">{{ b.total_amount|currency_inr }}</span>
+                                    </div>
+
+                                    <div class="d-flex flex-column gap-2 align-items-md-end">
+                                        <a href="{{ url_for('booking.confirmation', booking_id=b.booking_id) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold">
+                                            <i class="bi bi-receipt me-1"></i> View Receipt
+                                        </a>
+
+                                        <!-- Cancel Button: Shown strictly when allowed (confirmed & check_in > today) -->
+                                        {% if b.can_cancel %}
+                                            <form action="{{ url_for('booking.cancel_booking', booking_id=b.booking_id) }}" method="POST" onsubmit="return confirm('Cancel booking #{{ b.booking_id }}? Stored procedure sp_cancel_booking will mark it cancelled and refund payment.');">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold" id="btn-cancel-{{ b.booking_id }}">
+                                                    <i class="bi bi-x-circle me-1"></i> Cancel Booking
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white my-3">
+                    <div class="stat-icon mx-auto mb-3" style="width: 70px; height: 70px; font-size: 2rem;">
+                        <i class="bi bi-calendar-x"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">No Upcoming Reservations</h5>
+                    <p class="text-muted small max-w-md mx-auto mb-4">
+                        You do not have any active upcoming stays booked. Explore our charming listings across India and book your next getaway.
+                    </p>
+                    <div>
+                        <a href="{{ url_for('search.search') }}" class="btn btn-hc-primary rounded-pill px-4 py-2 fw-semibold">
+                            Browse Available Stays
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Past & Cancelled Stays Tab Pane -->
+        <div class="tab-pane fade" id="past-pane" role="tabpanel" aria-labelledby="past-tab">
+            {% if past_bookings %}
+                <div class="d-flex flex-column gap-3">
+                    {% for b in past_bookings %}
+                        <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white" id="booking-card-{{ b.booking_id }}">
+                            <div class="row g-3 align-items-center">
+                                <!-- Property Thumbnail -->
+                                <div class="col-md-3 col-12">
+                                    <img src="{{ b.primary_image }}" alt="{{ b.property_name }}" class="rounded-3 w-100" style="height: 140px; object-fit: cover;">
+                                </div>
+
+                                <!-- Reservation Details -->
+                                <div class="col-md-6 col-12">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge font-monospace bg-light text-dark border small">ID #{{ b.booking_id }}</span>
+                                        <span class="badge font-monospace bg-secondary bg-opacity-10 text-secondary border small">{{ b.booking_code }}</span>
+                                        {% if b.booking_status == 'confirmed' %}
+                                            <span class="badge badge-status-completed">Completed Stay</span>
+                                        {% else %}
+                                            <span class="badge badge-status-cancelled">Cancelled</span>
+                                        {% endif %}
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border">
+                                            Payment: {{ b.payment_status or 'Refunded' if b.booking_status == 'cancelled' else 'Success' }}
+                                        </span>
+                                    </div>
+
+                                    <h5 class="fw-bold text-dark mb-1">
+                                        <a href="{{ url_for('search.property_detail', property_id=b.property_id) }}" class="text-decoration-none text-dark">
+                                            {{ b.property_name }}
+                                        </a>
+                                    </h5>
+                                    <div class="text-muted small mb-2">
+                                        <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ b.city }}, {{ b.state }} &bull;
+                                        <span class="text-primary fw-semibold">{{ b.room_type_name }} (Room {{ b.room_number }})</span>
+                                    </div>
+
+                                    <div class="small text-secondary d-flex flex-wrap gap-3">
+                                        <span><i class="bi bi-calendar-event me-1"></i>{{ b.check_in|format_date }} &rarr; {{ b.check_out|format_date }}</span>
+                                        <span><i class="bi bi-moon me-1"></i>{{ b.nights }} Night{{ 's' if b.nights > 1 else '' }}</span>
+                                        <span><i class="bi bi-people me-1"></i>{{ b.guests }} Guest{{ 's' if b.guests > 1 else '' }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Price & Action Column -->
+                                <div class="col-md-3 col-12 text-md-end border-top border-md-top-0 pt-3 pt-md-0">
+                                    <div class="mb-2">
+                                        <span class="text-muted small d-block">Total Amount</span>
+                                        <span class="fs-4 fw-bold text-dark">{{ b.total_amount|currency_inr }}</span>
+                                    </div>
+
+                                    <div class="d-flex flex-column gap-2 align-items-md-end">
+                                        <a href="{{ url_for('booking.confirmation', booking_id=b.booking_id) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold">
+                                            <i class="bi bi-receipt me-1"></i> View Receipt
+                                        </a>
+
+                                        <!-- Review Section: Only shown when allowed (checkout <= today and not cancelled) -->
+                                        {% if b.review_id %}
+                                            <div class="badge bg-warning text-dark px-3 py-2 rounded-pill mt-1">
+                                                <i class="bi bi-star-fill text-dark me-1"></i> Reviewed ({{ b.review_rating }} / 5)
+                                            </div>
+                                        {% elif b.can_review %}
+                                            <button type="button" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold" id="btn-review-{{ b.booking_id }}" data-bs-toggle="modal" data-bs-target="#reviewModal{{ b.booking_id }}">
+                                                <i class="bi bi-star-fill me-1"></i> Write Review
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Review Modal for this booking -->
+                        {% if b.can_review %}
+                            <div class="modal fade" id="reviewModal{{ b.booking_id }}" tabindex="-1" aria-labelledby="reviewModalLabel{{ b.booking_id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content rounded-4 border-0 shadow">
+                                        <form action="{{ url_for('booking.add_review', booking_id=b.booking_id) }}" method="POST">
+                                            <div class="modal-header border-0 pb-0">
+                                                <h5 class="modal-title fw-bold" id="reviewModalLabel{{ b.booking_id }}">Review Your Stay</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p class="text-muted small mb-3">
+                                                    Share your experience at <strong>{{ b.property_name }}</strong> (Stayed {{ b.check_in|format_date }} to {{ b.check_out|format_date }}).
+                                                </p>
+
+                                                <div class="mb-3">
+                                                    <label for="review-rating-{{ b.booking_id }}" class="form-label small fw-bold text-muted">Rating (1 to 5 Stars)</label>
+                                                    <select name="rating" id="review-rating-{{ b.booking_id }}" class="form-select rounded-3 fw-bold">
+                                                        <option value="5" selected>⭐⭐⭐⭐⭐ (5 Stars - Exceptional)</option>
+                                                        <option value="4">⭐⭐⭐⭐ (4 Stars - Very Good)</option>
+                                                        <option value="3">⭐⭐⭐ (3 Stars - Average)</option>
+                                                        <option value="2">⭐⭐ (2 Stars - Below Expectations)</option>
+                                                        <option value="1">⭐ (1 Star - Poor)</option>
+                                                    </select>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label for="review-comment-{{ b.booking_id }}" class="form-label small fw-bold text-muted">Your Experience & Feedback</label>
+                                                    <textarea name="comment" id="review-comment-{{ b.booking_id }}" rows="3" class="form-control rounded-3" placeholder="Tell other travellers about the amenities, host hospitality, views, and comfort..." required></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer border-0 pt-0">
+                                                <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-hc-primary rounded-pill px-4 fw-semibold" id="btn-submit-review-{{ b.booking_id }}">
+                                                    Submit Review
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white my-3">
+                    <div class="stat-icon mx-auto mb-3" style="width: 70px; height: 70px; font-size: 2rem;">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">No Past Stays</h5>
+                    <p class="text-muted small max-w-md mx-auto mb-0">
+                        You have not completed any cottage stays yet.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

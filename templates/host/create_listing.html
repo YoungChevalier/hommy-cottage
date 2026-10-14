@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}List a New Property | Hommy Cottage Host{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('host.dashboard') }}">Host Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">New Property Listing</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-9 col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+                <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
+                    <div class="stat-icon" style="width: 54px; height: 54px; font-size: 1.6rem; background: rgba(217, 119, 6, 0.1); color: var(--hc-amber);">
+                        <i class="bi bi-house-add-fill"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold text-dark mb-0">List Your Property</h3>
+                        <small class="text-muted">Register your cottage or villa. New listings start with <strong>Pending</strong> status until verified by administrators.</small>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning border-warning-subtle d-flex align-items-center gap-2 mb-4 rounded-3" role="alert">
+                    <i class="bi bi-info-circle-fill fs-5"></i>
+                    <div class="small">
+                        <strong>Approval Workflow:</strong> New properties automatically start with status <code>pending</code>. Once approved by an administrator, your property and its room types will become publicly visible and bookable.
+                    </div>
+                </div>
+
+                <form action="{{ url_for('host.add_property') }}" method="POST" enctype="multipart/form-data">
+                    
+                    <!-- Section 1: Property Overview -->
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-info-circle text-success me-2"></i>1. Property Identity</h5>
+                    <div class="mb-3">
+                        <label for="property-name" class="form-label small fw-bold text-muted">Property Name *</label>
+                        <input type="text" name="name" id="property-name" class="form-control rounded-3" placeholder="e.g. Whispering Pines Himalayan Cedar Chalet" required>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label for="property-type" class="form-label small fw-bold text-muted">Property Category *</label>
+                            <select name="type_id" id="property-type" class="form-select rounded-3" required>
+                                <option value="" disabled selected>Select Category...</option>
+                                {% for pt in property_types %}
+                                    <option value="{{ pt.type_id }}">{{ pt.type_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <label for="property-city" class="form-label small fw-bold text-muted">Destination City *</label>
+                            <select name="city_id" id="property-city" class="form-select rounded-3" required>
+                                <option value="" disabled selected>Select City...</option>
+                                {% for c in cities %}
+                                    <option value="{{ c.city_id }}">{{ c.city_name }} ({{ c.state }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="property-desc" class="form-label small fw-bold text-muted">Description & Highlights *</label>
+                        <textarea name="description" id="property-desc" rows="4" class="form-control rounded-3" placeholder="Describe scenic mountain/lake views, ambiance, proximity to attractions, architectural heritage, and guest experience..." required></textarea>
+                    </div>
+
+                    <!-- Section 2: Location -->
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt text-danger me-2"></i>2. Address & Location</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-8 col-12">
+                            <label for="property-addr" class="form-label small fw-bold text-muted">Street Address Line *</label>
+                            <input type="text" name="address" id="property-addr" class="form-control rounded-3" placeholder="e.g. Log Huts Road, Old Manali" required>
+                        </div>
+                        <div class="col-md-4 col-12">
+                            <label for="property-pin" class="form-label small fw-bold text-muted">Pincode *</label>
+                            <input type="text" name="pincode" id="property-pin" class="form-control rounded-3" placeholder="175131" pattern="[0-9]{5,10}" required>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Amenities Checkboxes -->
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-check2-square text-warning me-2"></i>3. Amenities & Facilities</h5>
+                    <p class="small text-muted mb-2">Check all amenities available at this property:</p>
+                    <div class="row g-2 mb-4 p-3 bg-light rounded-3 border">
+                        {% for a in amenities %}
+                            <div class="col-md-4 col-sm-6 col-12">
+                                <div class="form-check small py-1">
+                                    <input class="form-check-input" type="checkbox" name="amenities" value="{{ a.amenity_id }}" id="amenity_{{ a.amenity_id }}">
+                                    <label class="form-check-label text-dark fw-medium" for="amenity_{{ a.amenity_id }}">
+                                        <i class="bi bi-check-circle-fill text-success me-1"></i> {{ a.amenity_name }}
+                                    </label>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Section 4: Image Uploads -->
+                    <h5 class="fw-bold text-dark mb-2"><i class="bi bi-camera text-info me-2"></i>4. Photos & Media</h5>
+                    <div class="p-3 bg-light rounded-3 border mb-4">
+                        <div class="mb-3">
+                            <label for="property-images" class="form-label small fw-bold text-dark">Upload Property Images (Multiple supported)</label>
+                            <input type="file" name="images" id="property-images" class="form-control rounded-3" accept=".jpg,.jpeg,.png" multiple>
+                            <div class="form-text small">
+                                <i class="bi bi-shield-lock-fill text-secondary me-1"></i>
+                                <strong>Requirements:</strong> JPG and PNG images only. Maximum file size is strictly <strong>4 MB</strong> per image. Files are sanitized and stored with a unique UUID prefix.
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6 col-12">
+                                <label for="primary-index" class="form-label small fw-bold text-muted">Choose Primary Image</label>
+                                <select name="primary_image_index" id="primary-index" class="form-select rounded-3">
+                                    <option value="0" selected>First selected photo (Default Primary)</option>
+                                    <option value="1">Second photo</option>
+                                    <option value="2">Third photo</option>
+                                    <option value="3">Fourth photo</option>
+                                </select>
+                                <small class="text-muted">The primary image is displayed on search result cards.</small>
+                            </div>
+                            <div class="col-md-6 col-12">
+                                <label for="property-img-url" class="form-label small fw-bold text-muted">Or Online Image URL (Optional Fallback)</label>
+                                <input type="url" name="image_url" id="property-img-url" class="form-control rounded-3" placeholder="https://images.unsplash.com/photo-...">
+                                <small class="text-muted">Used if no image files are uploaded above.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Next Step Indicator -->
+                    <div class="p-3 rounded-3 bg-info-subtle border border-info-subtle mb-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-door-open-fill text-info fs-5"></i>
+                            <div class="small text-dark">
+                                <strong>Next Step:</strong> After creating this property, you will configure <strong>Room Types</strong> (e.g. Deluxe Suite, Standard Room) with room count specifications that automatically create physical rooms.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                        <a href="{{ url_for('host.dashboard') }}" class="btn btn-light rounded-pill px-4 py-2 fw-semibold">Cancel</a>
+                        <button type="submit" class="btn btn-hc-primary rounded-pill px-5 py-2 fw-bold shadow-sm" id="btn-submit-property">
+                            <i class="bi bi-cloud-arrow-up-fill me-1"></i> Submit Property for Review
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

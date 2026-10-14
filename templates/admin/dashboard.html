@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Control Center | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger rounded-pill px-3 py-1">Administrator</span>
+                <span class="text-muted small">Platform Superuser Portal</span>
+            </div>
+            <h2 class="fw-bold text-dark mb-0">Platform Administration & Analytics</h2>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('admin.pending_listings') }}" class="btn btn-warning rounded-pill px-3 py-2 fw-bold position-relative shadow-sm">
+                <i class="bi bi-clock-history me-1"></i> Pending Queue
+                {% if stats.pending_approval > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{ stats.pending_approval }}
+                    </span>
+                {% endif %}
+            </a>
+            <a href="{{ url_for('admin.reports') }}" class="btn btn-outline-dark rounded-pill px-3 py-2 fw-semibold">
+                <i class="bi bi-graph-up-arrow me-1 text-primary"></i> Revenue Reports
+            </a>
+            <a href="{{ url_for('admin.users_list') }}" class="btn btn-outline-dark rounded-pill px-3 py-2 fw-semibold">
+                <i class="bi bi-people-fill me-1 text-success"></i> Manage Users
+            </a>
+        </div>
+    </div>
+
+    <!-- Platform KPI Stats Cards -->
+    <div class="row g-3 mb-4">
+        <!-- Total Users -->
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(59, 130, 246, 0.12); color: #2563eb;">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-val">{{ stats.total_users }}</div>
+                    <div class="stat-label">Total Users ({{ stats.total_hosts }} Hosts / {{ stats.total_guests }} Guests)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Approval Listings -->
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+                <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #d97706;">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div>
+                    <div class="stat-val text-warning">{{ stats.pending_approval }}</div>
+                    <div class="stat-label">Pending Approval ({{ stats.approved_properties }} Live)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Bookings -->
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(168, 85, 247, 0.12); color: #9333ea;">
+                    <i class="bi bi-journal-check"></i>
+                </div>
+                <div>
+                    <div class="stat-val">{{ stats.total_bookings }}</div>
+                    <div class="stat-label">Total Reservations</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Revenue -->
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+                <div>
+                    <div class="stat-val text-success">{{ stats.total_revenue|currency_inr }}</div>
+                    <div class="stat-label">Gross Platform Volume</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Moderation Queue Preview -->
+    {% if pending_preview %}
+        <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+            <div class="card-header bg-warning bg-opacity-10 border-bottom p-3 d-flex align-items-center justify-content-between">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-exclamation-circle-fill text-warning me-2"></i>Pending Listings Requiring Review
+                </h5>
+                <a href="{{ url_for('admin.pending_listings') }}" class="small fw-bold text-dark text-decoration-none">
+                    View Full Moderation Queue ({{ stats.pending_approval }}) &rarr;
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 table-hc">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Property Name</th>
+                            <th>Destination</th>
+                            <th>Category</th>
+                            <th>Host</th>
+                            <th>Submitted On</th>
+                            <th class="text-end">Moderation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in pending_preview %}
+                            <tr>
+                                <td class="font-monospace text-muted small">#{{ p.property_id }}</td>
+                                <td class="fw-bold text-dark">{{ p.name }}</td>
+                                <td>{{ p.city_name }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ p.type_name }}</span></td>
+                                <td>
+                                    <div class="fw-semibold small text-dark">{{ p.host_name }}</div>
+                                    <small class="text-muted">{{ p.host_email }}</small>
+                                </td>
+                                <td class="small text-muted">{{ p.created_at|format_date }}</td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <form action="{{ url_for('admin.approve_property', property_id=p.property_id) }}" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-outline-success btn-sm rounded-start-pill px-3" title="Approve Listing">
+                                                <i class="bi bi-check-lg me-1"></i>Approve
+                                            </button>
+                                        </form>
+                                        <a href="{{ url_for('admin.pending_listings', status='pending') }}" class="btn btn-outline-danger btn-sm rounded-end-pill px-2" title="Review & Reject with Note">
+                                            <i class="bi bi-x-lg"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Recent Platform Activity -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-4">
+        <div class="card-header bg-white border-bottom p-3 d-flex align-items-center justify-content-between">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-activity text-danger me-2"></i>Recent Platform Bookings
+            </h5>
+            <a href="{{ url_for('admin.bookings_list') }}" class="small fw-semibold text-danger">View all reservations &rarr;</a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 table-hc">
+                <thead class="table-light">
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>Property</th>
+                        <th>Room</th>
+                        <th>Guest & Host</th>
+                        <th>Dates</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in recent_bookings %}
+                        <tr>
+                            <td class="font-monospace small fw-bold">#{{ b.booking_id }}</td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ b.property_name }}</div>
+                                <small class="text-muted">{{ b.city_name }}</small>
+                            </td>
+                            <td>
+                                <div class="small fw-semibold text-dark">{{ b.room_type }}</div>
+                                <small class="text-muted">Room {{ b.room_number }}</small>
+                            </td>
+                            <td>
+                                <div class="small fw-semibold text-dark"><i class="bi bi-person me-1"></i>{{ b.guest_name }}</div>
+                                <small class="text-muted"><i class="bi bi-house-door me-1"></i>Host: {{ b.host_name }}</small>
+                            </td>
+                            <td class="small text-muted">{{ b.check_in|format_date }} &rarr; {{ b.check_out|format_date }}</td>
+                            <td class="fw-bold text-success">{{ b.amount|currency_inr if b.amount else '—' }}</td>
+                            <td>
+                                {% if b.booking_status == 'confirmed' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">Confirmed</span>
+                                {% elif b.booking_status == 'cancelled' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1">Cancelled</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1">{{ b.booking_status|capitalize }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">No reservations recorded yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

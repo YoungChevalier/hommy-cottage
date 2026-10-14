@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Hommy Cottage | Cozy Vacation Stays & Scenic Mountain Retreats{% endblock %}
+
+{% block content %}
+<!-- Hero Section with Search Bar -->
+<section class="hero-section">
+    <div class="container text-center">
+        <h1 class="hero-title fw-bold">Find Your Cozy Cottage Hideaway</h1>
+        <p class="hero-subtitle">Discover handcrafted wooden cabins, misty plantation chalets, and heritage tea estates across India.</p>
+
+        <!-- Search Box -->
+        <div class="row justify-content-center">
+            <div class="col-xl-10 col-lg-11 col-12">
+                <div class="trivago-search-box text-start">
+                    <form action="{{ url_for('search.search') }}" method="GET" class="row g-2 align-items-center" id="hero-search-form">
+                        
+                        <!-- Destination -->
+                        <div class="col-lg-4 col-md-6 col-12">
+                            <div class="search-field-group">
+                                <label for="search-city" class="search-field-label">
+                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i> Destination
+                                </label>
+                                <input type="text" name="city" id="search-city" list="cities-datalist" class="search-field-input" placeholder="City or destination (e.g. Manali, Ooty)">
+                                <datalist id="cities-datalist">
+                                    {% for c in cities %}
+                                        <option value="{{ c.city_name }}">{{ c.city_name }}, {{ c.state }}</option>
+                                    {% endfor %}
+                                </datalist>
+                            </div>
+                        </div>
+
+                        <!-- Check-in Date -->
+                        <div class="col-lg-2 col-md-3 col-6">
+                            <div class="search-field-group">
+                                <label for="check_in_date" class="search-field-label">
+                                    <i class="bi bi-calendar-event text-primary me-1"></i> Check In
+                                </label>
+                                <input type="date" name="check_in" id="check_in_date" class="search-field-input">
+                            </div>
+                        </div>
+
+                        <!-- Check-out Date -->
+                        <div class="col-lg-2 col-md-3 col-6">
+                            <div class="search-field-group">
+                                <label for="check_out_date" class="search-field-label">
+                                    <i class="bi bi-calendar-check text-success me-1"></i> Check Out
+                                </label>
+                                <input type="date" name="check_out" id="check_out_date" class="search-field-input">
+                            </div>
+                        </div>
+
+                        <!-- Guests -->
+                        <div class="col-lg-2 col-md-6 col-12">
+                            <div class="search-field-group">
+                                <label for="search-guests" class="search-field-label">
+                                    <i class="bi bi-people-fill text-warning me-1"></i> Guests
+                                </label>
+                                <select name="guests" id="search-guests" class="search-field-input form-select form-select-sm border-0 p-0 shadow-none">
+                                    <option value="1">1 Guest</option>
+                                    <option value="2" selected>2 Guests</option>
+                                    <option value="4">4 Guests</option>
+                                    <option value="6">6+ Guests</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Search CTA Button -->
+                        <div class="col-lg-2 col-md-6 col-12">
+                            <button type="submit" class="btn btn-hc-primary w-100 py-3 d-flex align-items-center justify-content-center gap-2" id="hero-btn-search">
+                                <i class="bi bi-search fs-5"></i>
+                                <span class="fw-bold">Search</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Popular Amenities Quick Badges loaded from DB -->
+                    {% if amenities %}
+                    <div class="d-flex flex-wrap gap-2 mt-3 pt-2 border-top align-items-center">
+                        <span class="small fw-bold text-muted me-1"><i class="bi bi-sliders me-1"></i>Popular Amenities:</span>
+                        {% for am in amenities[:8] %}
+                            <a href="{{ url_for('search.search', amenities=am.amenity_id) }}" class="badge bg-light text-dark text-decoration-none border rounded-pill px-3 py-1">
+                                <i class="bi bi-tag text-success me-1"></i>{{ am.amenity_name }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Popular Destination Quick Chips -->
+<section class="container mb-5">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-compass-fill text-success me-2"></i>Trending Destinations
+        </h5>
+        <a href="{{ url_for('search.search') }}" class="small fw-semibold text-success">Browse all &rarr;</a>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        {% for dest in popular_cities %}
+            <a href="{{ url_for('search.search', city=dest.city) }}" class="dest-chip" data-city="{{ dest.city }}" id="chip-dest-{{ dest.city|lower }}">
+                <i class="bi bi-geo-alt text-danger"></i>
+                <span>{{ dest.city }}</span>
+                <span class="badge bg-light text-secondary rounded-pill border">{{ dest.cottage_count }} stays</span>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Featured Top-Rated Cottages -->
+<section class="container mb-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h3 class="fw-bold mb-1">Top-Rated Vacation Cottages</h3>
+            <p class="text-muted small mb-0">Handpicked retreats with stellar guest ratings and verified hosts</p>
+        </div>
+        <a href="{{ url_for('search.search', sort='rating') }}" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+            View All Stays
+        </a>
+    </div>
+
+    <div class="row g-4">
+        {% for cottage in featured_cottages %}
+            <div class="col-xl-4 col-md-6 col-12">
+                <div class="cottage-card" id="card-cottage-{{ cottage.property_id or cottage.cottage_id }}">
+                    <div class="cottage-img-wrapper">
+                        <img src="{{ cottage.primary_image }}" alt="{{ cottage.property_name or cottage.title }}" loading="lazy" onerror="this.onerror=null;this.src='/static/img/sample/default.jpg';">
+                        <span class="badge-property-type">{{ cottage.type_name or cottage.property_type }}</span>
+                        <span class="badge-rating">
+                            <i class="bi bi-star-fill"></i>
+                            {{ "%.1f"|format(cottage.avg_rating) if cottage.avg_rating > 0 else "New" }}
+                            {% if cottage.review_count > 0 %}
+                                <span class="text-muted small">({{ cottage.review_count }})</span>
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    <div class="cottage-card-body">
+                        <h5 class="cottage-card-title">
+                            <a href="{{ url_for('search.property_detail', property_id=cottage.property_id or cottage.cottage_id) }}">{{ cottage.property_name or cottage.title }}</a>
+                        </h5>
+                        <div class="cottage-location">
+                            <i class="bi bi-geo-alt-fill text-danger"></i>
+                            <span>{{ cottage.city_name or cottage.city }}, {{ cottage.state }}</span>
+                        </div>
+
+                        <div class="cottage-specs">
+                            <span><i class="bi bi-people me-1"></i>Up to {{ cottage.max_guests or 4 }} guests</span>
+                            <span><i class="bi bi-building me-1"></i>{{ cottage.type_name or cottage.property_type }}</span>
+                        </div>
+
+                        <div class="cottage-price-box">
+                            <div>
+                                <span class="price-amount">{{ (cottage.starting_price or cottage.base_price_per_night)|currency_inr }}</span>
+                                <span class="price-unit">/ night</span>
+                            </div>
+                            <a href="{{ url_for('search.property_detail', property_id=cottage.property_id or cottage.cottage_id) }}" class="btn btn-sm btn-hc-primary rounded-pill px-3 fw-semibold">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Why Choose Hommy Cottage -->
+<section class="container mb-5">
+    <div class="p-4 p-md-5 rounded-4 bg-white border shadow-sm">
+        <div class="text-center mb-4">
+            <span class="badge bg-success bg-opacity-10 text-success fw-bold px-3 py-2 rounded-pill uppercase">The Hommy Experience</span>
+            <h3 class="fw-bold mt-2">Why Travelers Choose Hommy Cottage</h3>
+            <p class="text-muted small max-w-lg mx-auto">Connecting mindful wanderers with verified nature retreats, honest host pricing, and seamless booking peace of mind.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4 text-center">
+                <div class="stat-icon mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.8rem; background: rgba(27, 67, 50, 0.1); color: var(--hc-forest);">
+                    <i class="bi bi-patch-check-fill"></i>
+                </div>
+                <h5 class="fw-bold">100% Handpicked Cabins</h5>
+                <p class="small text-muted">
+                    Every cottage is vetted for authentic architecture, comfort amenities, mountain or lake views, and warm host hospitality.
+                </p>
+            </div>
+
+            <div class="col-md-4 text-center">
+                <div class="stat-icon mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.8rem; background: rgba(217, 119, 6, 0.1); color: var(--hc-amber);">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <h5 class="fw-bold">Direct Host Pricing</h5>
+                <p class="small text-muted">
+                    Transparent rates with no hidden middleman markups. Compare room types, views, and seasonal promotions effortlessly.
+                </p>
+            </div>
+
+            <div class="col-md-4 text-center">
+                <div class="stat-icon mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.8rem; background: rgba(59, 130, 246, 0.1); color: #2563eb;">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <h5 class="fw-bold">Instant & Secure Reservations</h5>
+                <p class="small text-muted">
+                    Real-time room availability confirmation, simulated secure payments, instant receipts, and flexible guest cancellation safeguards.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Host Call-to-Action Banner -->
+<section class="container mb-5">
+    <div class="p-4 p-md-5 rounded-4 text-white" style="background: linear-gradient(135deg, #081c15 0%, #1b4332 100%);">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <span class="badge bg-warning text-dark fw-bold px-3 py-1 rounded-pill mb-2">Host with Hommy Cottage</span>
+                <h2 class="text-white fw-bold">Own a Cottage, Chalet or Homestay?</h2>
+                <p class="text-light text-opacity-75 mb-0">
+                    Join hundreds of hosts who list their properties on Hommy Cottage. Easy self-onboarding, real-time booking ledger, and zero commission during trial.
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <a href="{{ url_for('host.add_property') if current_user and current_user.role in ['host', 'admin'] else (url_for('auth.become_host') if current_user else url_for('auth.register', role='host')) }}" class="btn btn-hc-amber btn-lg px-4 py-3 rounded-pill fw-bold shadow">
+                    <i class="bi bi-house-door-fill me-2"></i> List Your Cottage Now
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,43 +1,35 @@
-# ── Python ──────────────────────────────────────────────
+# Environment & Secrets
+.env
+.env.local
+*.env
+
+# Python Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python Bytecode & Cache
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
+*$py.class
 *.so
-
-# ── Virtual environments ─────────────────────────────────
-venv/
-.venv/
-env/
-.env/
-ENV/
-
-# ── Environment / secrets ────────────────────────────────
-.env
-*.env
-!.env.example
-
-# ── IDE / OS ─────────────────────────────────────────────
-.vscode/
-.idea/
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
-
-# ── Testing & coverage ───────────────────────────────────
 .pytest_cache/
 .coverage
 htmlcov/
 
-# ── Build artefacts ──────────────────────────────────────
-dist/
-build/
-*.egg-info/
+# User Uploaded Media (keep directory with .gitkeep)
+static/uploads/*
+!static/uploads/.gitkeep
+!static/uploads/README.md
 
-# ── Generated invoices (Phase 7) ─────────────────────────
-generated_invoices/
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
 
-# ── Credentials and local notes (NEVER commit) ────────────
-credentials.txt
-*.docx
+# IDE & Editor Settings
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout & Reserve | {{ room_type.property_name if room_type else cottage.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('search.search') }}">Search Cottages</a></li>
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('search.property_detail', property_id=room_type.property_id if room_type else cottage.cottage_id) }}">
+                    {{ room_type.property_name if room_type else cottage.title }}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Checkout</li>
+        </ol>
+    </nav>
+
+    <h2 class="fw-bold text-dark mb-4">Complete Your Reservation</h2>
+
+    <div class="row g-4">
+        <!-- Booking Form & Simulated Payment -->
+        <div class="col-lg-7 col-12">
+            <form action="{{ url_for('booking.book') }}" method="POST" id="checkout-form">
+                <input type="hidden" name="room_type_id" value="{{ room_type.room_type_id if room_type else cottage.room_type_id }}">
+
+                <!-- Section 1: Trip Dates -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-calendar3 text-success me-2"></i>1. Dates & Guests
+                        </h5>
+                        <span class="badge bg-light text-secondary border">Room: {{ room_type.type_name if room_type else 'Selected Room' }}</span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label for="check_in_date" class="form-label small fw-bold text-muted">Check-in Date</label>
+                            <input type="date" name="check_in" id="check_in_date" value="{{ check_in }}" class="form-control rounded-3" required>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label for="check_out_date" class="form-label small fw-bold text-muted">Check-out Date</label>
+                            <input type="date" name="check_out" id="check_out_date" value="{{ check_out }}" class="form-control rounded-3" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="checkout-guests" class="form-label small fw-bold text-muted">
+                            Number of Guests (Max {{ room_type.capacity if room_type else cottage.max_guests }})
+                        </label>
+                        <select name="guests" id="checkout-guests" class="form-select rounded-3">
+                            {% set max_g = room_type.capacity if room_type else cottage.max_guests %}
+                            {% for g in range(1, (max_g|int) + 1) %}
+                                <option value="{{ g }}" {% if guests|int == g %}selected{% endif %}>
+                                    {{ g }} Guest{{ 's' if g > 1 else '' }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="special_requests" class="form-label small fw-bold text-muted">Special Requests (Optional)</label>
+                        <textarea name="special_requests" id="special_requests" rows="2" class="form-control rounded-3" placeholder="e.g. Quiet room requested, estimated arrival 5 PM"></textarea>
+                    </div>
+                </div>
+
+                <!-- Section 2: Simulated Payment -->
+                <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-credit-card-2-front-fill text-warning me-2"></i>2. Simulated Payment Ledger
+                        </h5>
+                        <span class="badge bg-secondary bg-opacity-25 text-dark small">MySQL Payments Table</span>
+                    </div>
+
+                    <p class="small text-muted mb-3">
+                        Select an accepted payment method. The stored procedure <code>sp_book_room</code> will record an atomic transaction in MySQL.
+                    </p>
+
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <div class="form-check p-3 border rounded-3 bg-light">
+                            <input class="form-check-input" type="radio" name="payment_method" id="pay-upi" value="upi" checked>
+                            <label class="form-check-label fw-bold text-dark w-100" for="pay-upi">
+                                <i class="bi bi-phone text-success me-2"></i> UPI (Instant QR / VPA)
+                                <div class="small fw-normal text-muted">Simulate instant approval via Google Pay / PhonePe</div>
+                            </label>
+                        </div>
+
+                        <div class="form-check p-3 border rounded-3 bg-light">
+                            <input class="form-check-input" type="radio" name="payment_method" id="pay-card" value="card">
+                            <label class="form-check-label fw-bold text-dark w-100" for="pay-card">
+                                <i class="bi bi-credit-card text-primary me-2"></i> Credit / Debit Card
+                                <div class="small fw-normal text-muted">Simulated Visa / Mastercard / RuPay authorization</div>
+                            </label>
+                        </div>
+
+                        <div class="form-check p-3 border rounded-3 bg-light">
+                            <input class="form-check-input" type="radio" name="payment_method" id="pay-netbanking" value="netbanking">
+                            <label class="form-check-label fw-bold text-dark w-100" for="pay-netbanking">
+                                <i class="bi bi-bank text-warning me-2"></i> Net Banking
+                                <div class="small fw-normal text-muted">Simulated Indian retail banking transfer</div>
+                            </label>
+                        </div>
+
+                        <div class="form-check p-3 border rounded-3 bg-light">
+                            <input class="form-check-input" type="radio" name="payment_method" id="pay-cash" value="cash">
+                            <label class="form-check-label fw-bold text-dark w-100" for="pay-cash">
+                                <i class="bi bi-cash-stack text-success me-2"></i> Cash on Arrival
+                                <div class="small fw-normal text-muted">Pay at cottage reception upon check-in</div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-submit-booking" class="btn btn-hc-primary btn-lg w-100 py-3 rounded-pill fw-bold shadow">
+                    <i class="bi bi-shield-check me-2"></i> Confirm & Book via sp_book_room
+                </button>
+            </form>
+        </div>
+
+        <!-- Right Column: Cottage Summary & Real-time Bill Breakdown -->
+        <div class="col-lg-5 col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-4 bg-white sticky-top" style="top: 5rem;">
+                <h5 class="fw-bold text-dark mb-3">Booking Summary</h5>
+
+                <!-- Cottage Mini Card -->
+                <div class="d-flex gap-3 align-items-center mb-4 pb-3 border-bottom">
+                    <img src="{{ room_type.primary_image if room_type else cottage.primary_image }}" 
+                         alt="{{ room_type.property_name if room_type else cottage.title }}" 
+                         class="rounded-3" style="width: 90px; height: 90px; object-fit: cover;">
+                    <div>
+                        <span class="badge bg-dark bg-opacity-75 small mb-1">{{ room_type.property_type if room_type else cottage.property_type }}</span>
+                        <h6 class="fw-bold mb-1 text-dark">{{ room_type.property_name if room_type else cottage.title }}</h6>
+                        <small class="text-muted">
+                            <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ room_type.city_name if room_type else cottage.city }}
+                        </small>
+                        <div class="small fw-semibold text-primary mt-1">
+                            {{ room_type.type_name if room_type else 'Room Type' }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-time Bill Breakdown -->
+                <h6 class="fw-bold text-muted small text-uppercase letter-spacing mb-3">Price Breakdown</h6>
+                <div class="d-flex justify-content-between mb-2 small text-secondary">
+                    <span>Nightly Rate</span>
+                    <span class="fw-semibold text-dark">
+                        {{ (room_type.price_per_night if room_type else cottage.base_price_per_night)|currency_inr }}
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between mb-2 small text-secondary">
+                    <span>Room Capacity</span>
+                    <span class="fw-semibold text-dark">Up to {{ room_type.capacity if room_type else cottage.max_guests }} guests</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3 small text-secondary">
+                    <span>ACID Lock</span>
+                    <span class="badge bg-success bg-opacity-10 text-success">FOR UPDATE</span>
+                </div>
+
+                <div class="border-top pt-3 d-flex justify-content-between align-items-baseline mb-4">
+                    <span class="fw-bold fs-5 text-dark">Total Per Night</span>
+                    <span class="fw-bold fs-4 text-success">
+                        {{ (room_type.price_per_night if room_type else cottage.base_price_per_night)|currency_inr }}
+                    </span>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 border small text-muted">
+                    <div><i class="bi bi-check2-circle text-success me-1"></i> Instant booking confirmation via stored procedure</div>
+                    <div><i class="bi bi-x-circle text-danger me-1"></i> Free cancellation prior to check-in</div>
+                    <div><i class="bi bi-lock text-dark me-1"></i> MySQL row-level locking & triggers</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

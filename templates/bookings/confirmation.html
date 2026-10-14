@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Booking #{{ booking.booking_id }} Confirmed | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-12">
+            <!-- Success Banner -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white text-center mb-4">
+                <div class="stat-icon mx-auto mb-3" style="width: 72px; height: 72px; font-size: 2.2rem; background: #dcfce7; color: #15803d;">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <span class="badge bg-success bg-opacity-25 text-success fw-bold px-3 py-1 rounded-pill mb-2">
+                    Payment Status: {{ (booking.payment_status or 'success')|upper }}
+                </span>
+                <h2 class="fw-bold text-dark mb-1">Reservation Confirmed!</h2>
+                <p class="text-muted small mb-3">Your cottage reservation has been committed to the database via stored procedure <code>sp_book_room</code>.</p>
+
+                <div class="d-flex flex-wrap justify-content-center gap-3 mt-2">
+                    <div class="p-3 bg-light rounded-3 border text-center">
+                        <span class="text-muted small d-block">Booking ID</span>
+                        <span class="fs-4 fw-bold font-monospace text-dark" id="conf-booking-id">#{{ booking.booking_id }}</span>
+                    </div>
+                    <div class="p-3 bg-light rounded-3 border text-center">
+                        <span class="text-muted small d-block">Reference Code</span>
+                        <span class="fs-4 fw-bold font-monospace text-primary" id="conf-booking-code">{{ booking.booking_code }}</span>
+                    </div>
+                    <div class="p-3 bg-light rounded-3 border text-center">
+                        <span class="text-muted small d-block">Payment Status</span>
+                        <span class="fs-4 fw-bold text-success text-capitalize" id="conf-payment-status">{{ booking.payment_status or 'success' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Receipt & Itinerary Details -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white mb-4">
+                <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-4">
+                    <h5 class="fw-bold text-dark mb-0">Itinerary & Property Details</h5>
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i> Print Receipt
+                    </button>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6 col-12">
+                        <div class="text-muted small mb-1">Property & Room</div>
+                        <div class="fw-bold fs-6 text-dark">{{ booking.property_name or booking.cottage_title }}</div>
+                        <div class="small text-primary fw-semibold">{{ booking.room_type_name }} (Room {{ booking.room_number }})</div>
+                        <small class="text-muted"><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ booking.address_line }}, {{ booking.city }}, {{ booking.state }}</small>
+                    </div>
+
+                    <div class="col-md-6 col-12">
+                        <div class="text-muted small mb-1">Host Contact</div>
+                        <div class="fw-bold fs-6 text-dark">{{ booking.host_name }}</div>
+                        <small class="text-muted"><i class="bi bi-telephone me-1"></i>{{ booking.host_phone }} | {{ booking.host_email }}</small>
+                    </div>
+
+                    <div class="col-md-6 col-6">
+                        <div class="text-muted small mb-1">Check-in Date</div>
+                        <div class="fw-bold fs-5 text-dark" id="conf-check-in">{{ booking.check_in|format_date }}</div>
+                        <small class="text-muted">From 2:00 PM</small>
+                    </div>
+
+                    <div class="col-md-6 col-6">
+                        <div class="text-muted small mb-1">Check-out Date</div>
+                        <div class="fw-bold fs-5 text-dark" id="conf-check-out">{{ booking.check_out|format_date }}</div>
+                        <small class="text-muted">By 11:00 AM</small>
+                    </div>
+
+                    <div class="col-md-6 col-6">
+                        <div class="text-muted small mb-1">Stay Duration</div>
+                        <div class="fw-semibold text-dark fs-5" id="conf-nights">{{ booking.nights }} Night{{ 's' if booking.nights > 1 else '' }}</div>
+                    </div>
+
+                    <div class="col-md-6 col-6">
+                        <div class="text-muted small mb-1">Guests</div>
+                        <div class="fw-semibold text-dark fs-5">{{ booking.guests }} Guest{{ 's' if booking.guests > 1 else '' }}</div>
+                    </div>
+                </div>
+
+                <!-- Payment Ledger Details -->
+                <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Transaction & Total Amount</h6>
+                <div class="bg-light p-3 rounded-3 border mb-4">
+                    <div class="row g-2 small">
+                        <div class="col-sm-6">
+                            <span class="text-muted">Booking ID:</span>
+                            <span class="fw-bold text-dark ms-1">#{{ booking.booking_id }}</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted">Payment Method:</span>
+                            <span class="badge bg-secondary text-uppercase ms-1">{{ booking.payment_method or 'UPI' }}</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted">Payment Status:</span>
+                            <span class="badge bg-success ms-1 text-uppercase">{{ booking.payment_status or 'SUCCESS' }}</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted">Grand Total:</span>
+                            <span class="fw-bold text-success fs-5 ms-1" id="conf-total">{{ booking.total_amount|currency_inr }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="d-flex flex-wrap gap-2 justify-content-between">
+                    <a href="{{ url_for('booking.my_bookings') }}" class="btn btn-hc-primary rounded-pill px-4 py-2 fw-semibold">
+                        <i class="bi bi-journal-bookmark me-1"></i> View My Bookings
+                    </a>
+                    <a href="{{ url_for('search.search') }}" class="btn btn-outline-dark rounded-pill px-4 py-2 fw-semibold">
+                        Explore More Cottages
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

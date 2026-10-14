@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Revenue & Performance Reports | Admin | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Revenue & Analytical Reports</li>
+        </ol>
+    </nav>
+
+    <!-- Header with CSV Export Action -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-success rounded-pill px-3 py-1">Analytical Engine</span>
+                <span class="text-muted small">MySQL 8.0 Views & Window Functions</span>
+            </div>
+            <h2 class="fw-bold text-dark mb-0">Platform Revenue & Performance Ledger</h2>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin.export_revenue_csv') }}" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm" id="btn-export-revenue-csv">
+                <i class="bi bi-file-earmark-spreadsheet-fill me-1"></i> Export Revenue Report (CSV)
+            </a>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-dark rounded-pill px-3 py-2 fw-semibold">
+                <i class="bi bi-arrow-left me-1"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Macro Metrics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="stat-card" style="border-left: 4px solid #16a34a;">
+                <div class="stat-icon" style="background: rgba(22, 163, 74, 0.12); color: #16a34a;">
+                    <i class="bi bi-currency-rupee"></i>
+                </div>
+                <div>
+                    <div class="stat-val text-success">{{ gross_volume|currency_inr }}</div>
+                    <div class="stat-label">Platform Gross Receipts</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="stat-card" style="border-left: 4px solid #2563eb;">
+                <div class="stat-icon" style="background: rgba(37, 99, 235, 0.12); color: #2563eb;">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+                <div>
+                    <div class="stat-val text-primary">{{ total_successful_bookings }}</div>
+                    <div class="stat-label">Successful Transactions</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="stat-card" style="border-left: 4px solid #d97706;">
+                <div class="stat-icon" style="background: rgba(217, 119, 6, 0.12); color: #d97706;">
+                    <i class="bi bi-house-door-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-val">{{ host_revenues|length }}</div>
+                    <div class="stat-label">Active Host Portfolios</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="stat-card" style="border-left: 4px solid #9333ea;">
+                <div class="stat-icon" style="background: rgba(147, 51, 234, 0.12); color: #9333ea;">
+                    <i class="bi bi-geo-alt-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-val">{{ city_revenues|length }}</div>
+                    <div class="stat-label">Marketplace Destinations</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 1: Window-Function Property Revenue Rankings -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden mb-5">
+        <div class="card-header bg-white border-bottom p-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div>
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-trophy-fill text-warning me-2"></i>Property Revenue Leaderboard (Window Functions)
+                </h5>
+                <small class="text-muted">
+                    Evaluated using <code>RANK() OVER (PARTITION BY city_id ORDER BY revenue DESC)</code> and <code>DENSE_RANK() OVER (ORDER BY revenue DESC)</code>
+                </small>
+            </div>
+            <a href="{{ url_for('admin.export_revenue_csv') }}" class="btn btn-outline-success btn-sm rounded-pill px-3">
+                <i class="bi bi-download me-1"></i> Download CSV
+            </a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 table-hc">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 80px;" class="text-center">Overall Rank</th>
+                        <th>Property</th>
+                        <th>Host</th>
+                        <th>Destination</th>
+                        <th>City Rank (Partition)</th>
+                        <th>Bookings</th>
+                        <th class="text-end">Total Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in property_rankings %}
+                        <tr>
+                            <td class="text-center">
+                                {% if p.platform_revenue_rank == 1 %}
+                                    <span class="badge bg-warning text-dark px-2 py-1 fs-6 rounded-circle shadow-sm" title="Rank 1 Platform-wide">
+                                        🥇
+                                    </span>
+                                {% elif p.platform_revenue_rank == 2 %}
+                                    <span class="badge bg-secondary text-white px-2 py-1 fs-6 rounded-circle shadow-sm" title="Rank 2 Platform-wide">
+                                        🥈
+                                    </span>
+                                {% elif p.platform_revenue_rank == 3 %}
+                                    <span class="badge bg-amber text-dark px-2 py-1 fs-6 rounded-circle shadow-sm" style="background: #cd7f32; color: #fff;" title="Rank 3 Platform-wide">
+                                        🥉
+                                    </span>
+                                {% else %}
+                                    <span class="font-monospace fw-bold text-muted">#{{ p.platform_revenue_rank }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('search.property_detail', property_id=p.property_id) }}" class="fw-bold text-dark text-decoration-none" target="_blank">
+                                    {{ p.property_name }}
+                                </a>
+                                <small class="text-muted d-block font-monospace">Property ID: #{{ p.property_id }}</small>
+                            </td>
+                            <td>
+                                <div class="small fw-semibold text-dark">{{ p.host_name }}</div>
+                                <small class="text-muted">{{ p.host_email }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ p.city_name }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1">
+                                    Rank #{{ p.revenue_rank_in_city }} in {{ p.city_name }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ p.total_bookings }}</span>
+                            </td>
+                            <td class="text-end">
+                                <span class="fw-bold text-success fs-6">{{ p.total_revenue|currency_inr }}</span>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">No revenue data recorded yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Section 2: Views Analytics (Host Revenue View & City Revenue View side-by-side) -->
+    <div class="row g-4">
+        <!-- Host Revenue View -->
+        <div class="col-lg-6 col-12">
+            <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden h-100">
+                <div class="card-header bg-white border-bottom p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark">
+                            <i class="bi bi-person-badge-fill text-primary me-2"></i>Host Revenue Performance
+                        </h5>
+                        <small class="text-muted">MySQL View: <code>host_revenue_view</code></small>
+                    </div>
+                    <span class="badge bg-light text-secondary border">{{ host_revenues|length }} Hosts</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 table-hc">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Host Name</th>
+                                <th class="text-center">Paid Stays</th>
+                                <th class="text-end">Gross Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for hr in host_revenues %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ hr.host_name }}</div>
+                                        <small class="text-muted font-monospace">Host ID: #{{ hr.host_id }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark border">{{ hr.total_bookings }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="fw-bold text-success">{{ hr.total_revenue|currency_inr }}</span>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-3 text-muted">No host revenue records found.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- City Revenue View -->
+        <div class="col-lg-6 col-12">
+            <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden h-100">
+                <div class="card-header bg-white border-bottom p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5 class="fw-bold mb-0 text-dark">
+                            <i class="bi bi-geo-fill text-danger me-2"></i>Destination Marketplace Volume
+                        </h5>
+                        <small class="text-muted">MySQL View: <code>city_revenue_view</code></small>
+                    </div>
+                    <span class="badge bg-light text-secondary border">{{ city_revenues|length }} Cities</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 table-hc">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Destination City</th>
+                                <th class="text-center">Paid Stays</th>
+                                <th class="text-end">City Total Volume</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cr in city_revenues %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ cr.city_name }}</div>
+                                        <small class="text-muted font-monospace">City ID: #{{ cr.city_id }}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark border">{{ cr.bookings }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="fw-bold text-success">{{ cr.revenue|currency_inr }}</span>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-3 text-muted">No city revenue records found.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Host Dashboard | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header with Action -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">Host Operations Dashboard</h2>
+            <p class="text-muted small mb-0">Manage your cottage properties, configure room types, and monitor upcoming guest reservations</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('host.bookings_list') }}" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold">
+                <i class="bi bi-journal-bookmark-fill me-1"></i> Reservations Ledger
+            </a>
+            <a href="{{ url_for('host.add_property') }}" class="btn btn-hc-primary rounded-pill px-4 py-2 fw-bold shadow-sm" id="btn-create-new-cottage">
+                <i class="bi bi-house-add-fill me-1"></i> List New Property
+            </a>
+        </div>
+    </div>
+
+    <!-- KPI Stats Cards -->
+    <div class="row g-3 mb-4">
+        <!-- Total Properties -->
+        <div class="col-xl-2 col-md-4 col-sm-6 col-12">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(15, 23, 42, 0.08); color: #0f172a;">
+                    <i class="bi bi-houses-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-val">{{ kpis.total_properties or 0 }}</div>
+                    <div class="stat-label">Total Listings</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approved Properties -->
+        <div class="col-xl-2 col-md-4 col-sm-6 col-12">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(34, 197, 94, 0.12); color: #16a34a;">
+                    <i class="bi bi-patch-check-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-val text-success">{{ kpis.approved_count or 0 }}</div>
+                    <div class="stat-label">Approved & Live</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Properties -->
+        <div class="col-xl-2 col-md-4 col-sm-6 col-12">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #d97706;">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <div>
+                    <div class="stat-val text-warning">{{ kpis.pending_count or 0 }}</div>
+                    <div class="stat-label">Pending Approval</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rejected Properties -->
+        <div class="col-xl-2 col-md-4 col-sm-6 col-12">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #dc2626;">
+                    <i class="bi bi-shield-x"></i>
+                </div>
+                <div>
+                    <div class="stat-val text-danger">{{ kpis.rejected_count or 0 }}</div>
+                    <div class="stat-label">Rejected</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Bookings -->
+        <div class="col-xl-2 col-md-4 col-sm-6 col-12">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(59, 130, 246, 0.12); color: #2563eb;">
+                    <i class="bi bi-calendar2-check-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-val">{{ kpis.total_bookings or 0 }}</div>
+                    <div class="stat-label">Total Bookings</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Gross Earnings -->
+        <div class="col-xl-2 col-md-4 col-sm-6 col-12">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
+                    <i class="bi bi-currency-rupee"></i>
+                </div>
+                <div>
+                    <div class="stat-val text-truncate" style="font-size: 1.15rem;">{{ kpis.total_earnings|currency_inr }}</div>
+                    <div class="stat-label">Total Revenue</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Properties Listings Table -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white overflow-hidden">
+        <div class="card-header bg-white border-bottom p-3 d-flex align-items-center justify-content-between">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-house-door text-success me-2"></i>My Listed Properties
+            </h5>
+            <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">{{ properties|length }} Properties</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 table-hc">
+                <thead class="table-light">
+                    <tr>
+                        <th style="min-width: 250px;">Property</th>
+                        <th>Type & Destination</th>
+                        <th>Rooms & Types</th>
+                        <th>Starting Price</th>
+                        <th>Bookings</th>
+                        <th>Status</th>
+                        <th class="text-end" style="min-width: 160px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in properties %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <img src="{{ p.primary_image }}" alt="{{ p.name }}" class="rounded-3 shadow-sm border" style="width: 64px; height: 64px; object-fit: cover;">
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ p.name }}</div>
+                                        <small class="text-muted d-block text-truncate" style="max-width: 260px;">
+                                            <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ p.address }}
+                                        </small>
+                                        <small class="text-muted">
+                                            <i class="bi bi-star-fill text-warning me-1"></i>{{ "%.1f"|format(p.avg_rating) if p.avg_rating > 0 else "New" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border mb-1">{{ p.type_name }}</span>
+                                <div class="small text-muted">{{ p.city_name }}, {{ p.state }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark">{{ p.room_types_count }} Type{{ 's' if p.room_types_count != 1 else '' }}</div>
+                                <small class="text-muted">{{ p.total_rooms }} Total Room{{ 's' if p.total_rooms != 1 else '' }}</small>
+                            </td>
+                            <td>
+                                {% if p.starting_price > 0 %}
+                                    <span class="fw-bold text-success">{{ p.starting_price|currency_inr }}</span>
+                                    <small class="text-muted d-block">/ night</small>
+                                {% else %}
+                                    <span class="text-muted small">No rooms yet</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border px-2 py-1">{{ p.booking_count }}</span>
+                            </td>
+                            <td>
+                                {% if p.status == 'approved' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Approved & Live
+                                    </span>
+                                {% elif p.status == 'pending' %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1 rounded-pill">
+                                        <i class="bi bi-clock-history me-1"></i>Pending Review
+                                    </span>
+                                {% elif p.status == 'rejected' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1 rounded-pill">
+                                        <i class="bi bi-x-circle-fill me-1"></i>Rejected
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary px-3 py-1 rounded-pill">{{ p.status|capitalize }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('search.property_detail', property_id=p.property_id) }}" class="btn btn-outline-secondary" title="View Public Page">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                    <a href="{{ url_for('host.edit_property', property_id=p.property_id) }}" class="btn btn-outline-primary" title="Edit Property & Photos">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <a href="{{ url_for('host.list_room_types', property_id=p.property_id) }}" class="btn btn-outline-success" title="Manage Room Types & Inventory">
+                                        <i class="bi bi-door-open-fill"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <div class="py-3">
+                                    <i class="bi bi-house-door display-4 text-secondary mb-2 d-block"></i>
+                                    <h5 class="fw-bold text-dark">No properties listed yet</h5>
+                                    <p class="small text-muted mb-3">Begin welcoming guests by publishing your first cottage listing.</p>
+                                    <a href="{{ url_for('host.add_property') }}" class="btn btn-hc-primary rounded-pill px-4 py-2 fw-bold">
+                                        <i class="bi bi-plus-circle me-1"></i> List My First Property
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Upcoming Reservations (from upcoming_bookings_view) -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+        <div class="card-header bg-white border-bottom p-3 d-flex align-items-center justify-content-between">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-calendar-check text-primary me-2"></i>Upcoming Confirmed Reservations
+            </h5>
+            <a href="{{ url_for('host.bookings_list') }}" class="small fw-semibold text-success">
+                View all bookings &rarr;
+            </a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 table-hc">
+                <thead class="table-light">
+                    <tr>
+                        <th>Booking Ref</th>
+                        <th>Property</th>
+                        <th>Room Allocated</th>
+                        <th>Guest Identity</th>
+                        <th>Check-in & Check-out</th>
+                        <th>Amount</th>
+                        <th>Payment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in recent_bookings %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-light text-dark border font-monospace fw-bold">#{{ b.booking_id }}</span>
+                            </td>
+                            <td class="fw-semibold text-dark">{{ b.property_name }}</td>
+                            <td>
+                                <div class="fw-bold text-dark small">{{ b.room_type }}</div>
+                                <small class="text-muted">Room No: <span class="font-monospace fw-semibold">{{ b.room_number }}</span></small>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark small">{{ b.guest_name }}</div>
+                                <small class="text-muted"><i class="bi bi-telephone-fill me-1 text-secondary"></i>{{ b.guest_phone }}</small>
+                            </td>
+                            <td class="small">
+                                <span class="fw-semibold text-dark">{{ b.check_in|format_date }}</span>
+                                <span class="text-muted mx-1">&rarr;</span>
+                                <span class="fw-semibold text-dark">{{ b.check_out|format_date }}</span>
+                            </td>
+                            <td class="fw-bold text-success">{{ b.amount|currency_inr }}</td>
+                            <td>
+                                {% if b.payment_status == 'success' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Paid
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-1">
+                                        {{ b.payment_status|capitalize if b.payment_status else 'Pending' }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <i class="bi bi-calendar-x fs-3 text-secondary d-block mb-1"></i>
+                                No upcoming reservations currently scheduled. Once guests book your rooms, they appear here instantly.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

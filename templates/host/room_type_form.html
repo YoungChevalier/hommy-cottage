@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if is_edit %}Edit Room Type - {{ room_type.type_name }}{% else %}Add Room Type | Hommy Cottage Host{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('host.dashboard') }}">Host Dashboard</a></li>
+            {% if is_edit %}
+                <li class="breadcrumb-item"><a href="{{ url_for('host.edit_property', property_id=room_type.property_id) }}">{{ room_type.property_name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Edit {{ room_type.type_name }}</li>
+            {% else %}
+                <li class="breadcrumb-item"><a href="{{ url_for('host.edit_property', property_id=property.property_id) }}">{{ property.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">New Room Type</li>
+            {% endif %}
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+                <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
+                    <div class="stat-icon" style="width: 54px; height: 54px; font-size: 1.6rem; background: rgba(34, 197, 94, 0.12); color: #16a34a;">
+                        <i class="bi bi-door-open-fill"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold text-dark mb-0">
+                            {% if is_edit %}Edit Room Type: {{ room_type.type_name }}{% else %}Add New Room Type{% endif %}
+                        </h3>
+                        <small class="text-muted">
+                            {% if is_edit %}
+                                Adjust pricing, guest capacity, and room inventory for <strong>{{ room_type.property_name }}</strong>.
+                            {% else %}
+                                Configure a room category for <strong>{{ property.name }}</strong> with auto-generated physical rooms.
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+
+                <div class="alert alert-info border-info-subtle d-flex align-items-center gap-2 mb-4 rounded-3" role="alert">
+                    <i class="bi bi-door-open-fill fs-5 text-info"></i>
+                    <div class="small">
+                        <strong>Automatic Inventory Sync:</strong> Specify the total room count for this category. Hommy Cottage will automatically initialize and manage your physical room availability calendar for guest reservations.
+                    </div>
+                </div>
+
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="type_name" class="form-label small fw-bold text-muted">Room Type Name *</label>
+                        <input type="text" name="type_name" id="type_name" class="form-control rounded-3" 
+                               placeholder="e.g. Deluxe Mountain View Suite, Standard Attic Room" 
+                               value="{{ room_type.type_name if is_edit else '' }}" required>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label for="capacity" class="form-label small fw-bold text-muted">Max Guest Capacity per Room *</label>
+                            <input type="number" name="capacity" id="capacity" class="form-control rounded-3" 
+                                   min="1" max="20" 
+                                   value="{{ room_type.capacity if is_edit else '2' }}" required>
+                            <small class="text-muted">Number of guests accommodated.</small>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <label for="price_per_night" class="form-label small fw-bold text-muted">Nightly Rate (₹ INR) *</label>
+                            <input type="number" name="price_per_night" id="price_per_night" class="form-control rounded-3" 
+                                   min="100" step="50" 
+                                   value="{{ room_type.price_per_night if is_edit else '2500' }}" required>
+                            <small class="text-muted">Price per night for booking.</small>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-light rounded-3 border mb-4">
+                        <label for="room_count" class="form-label small fw-bold text-dark mb-1">
+                            Total Physical Rooms of this Type *
+                        </label>
+                        <div class="row align-items-center g-2">
+                            <div class="col-sm-4 col-12">
+                                <input type="number" name="room_count" id="room_count" class="form-control rounded-3 fw-bold fs-5 text-center" 
+                                       min="1" max="100" 
+                                       value="{{ current_room_count if is_edit else '3' }}" required>
+                            </div>
+                            <div class="col-sm-8 col-12">
+                                <small class="text-muted d-block">
+                                    {% if is_edit %}
+                                        Currently <strong>{{ current_room_count }}</strong> room(s) exist:
+                                        <span class="font-monospace text-dark">
+                                            {% for rm in current_rooms %}{{ rm.room_number }}{% if not loop.last %}, {% endif %}{% endfor %}
+                                        </span>.
+                                        Increasing count adds rooms; decreasing removes unreserved rooms.
+                                    {% else %}
+                                        Specifying <strong>N</strong> rooms will immediately create <code>N</code> physical rooms (e.g. 101, 102, 103...) ready for guest reservations.
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                        {% if is_edit %}
+                            <a href="{{ url_for('host.edit_property', property_id=room_type.property_id) }}" class="btn btn-light rounded-pill px-4 py-2 fw-semibold">Cancel</a>
+                        {% else %}
+                            <a href="{{ url_for('host.edit_property', property_id=property.property_id) }}" class="btn btn-light rounded-pill px-4 py-2 fw-semibold">Cancel</a>
+                        {% endif %}
+                        <button type="submit" class="btn btn-success rounded-pill px-5 py-2 fw-bold shadow-sm" id="btn-save-room-type">
+                            <i class="bi bi-check-circle-fill me-1"></i>
+                            {% if is_edit %}Update Room Type & Inventory{% else %}Create Room Type & Generate Rooms{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

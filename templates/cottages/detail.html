@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}{{ property.property_name }} | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{{ url_for('search.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('search.search') }}">Cottages</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('search.search', city=property.city_name) }}">{{ property.city_name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ property.property_name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Property Title & Rating Header -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-dark bg-opacity-75 rounded-pill px-3 py-1">{{ property.type_name }}</span>
+                {% if property.status != 'approved' %}
+                    <span class="badge bg-warning text-dark text-uppercase px-2 py-1 rounded">Status: {{ property.status }}</span>
+                {% endif %}
+                <span class="badge bg-warning text-dark fw-bold px-2 py-1 rounded">
+                    <i class="bi bi-star-fill text-dark me-1"></i>{{ "%.1f"|format(property.avg_rating) if property.avg_rating > 0 else "New" }}
+                </span>
+                <span class="text-muted small">({{ property.review_count }} verified review{{ 's' if property.review_count != 1 else '' }})</span>
+            </div>
+            <h2 class="fw-bold text-dark mb-1">{{ property.property_name }}</h2>
+            <div class="text-muted small d-flex align-items-center gap-1">
+                <i class="bi bi-geo-alt-fill text-danger"></i>
+                <span>{{ property.address }}, {{ property.city_name }}, {{ property.state }} - {{ property.pincode }}</span>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('search.search', city=property.city_name) }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i> More in {{ property.city_name }}
+            </a>
+        </div>
+    </div>
+
+    <!-- Gallery Section -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 bg-white p-2">
+        <div class="row g-2">
+            <!-- Main Featured Image -->
+            <div class="col-lg-8 col-12">
+                <img id="main-gallery-image" src="{{ images[0].image_url if images else '/static/img/sample/default.jpg' }}" alt="{{ property.property_name }}" class="gallery-main-img" onerror="this.onerror=null;this.src='/static/img/sample/default.jpg';" style="width: 100%; height: 420px; object-fit: cover; border-radius: 12px;">
+            </div>
+
+            <!-- Thumbnail Grid -->
+            <div class="col-lg-4 col-12">
+                <div class="row g-2">
+                    {% for img in images %}
+                        <div class="col-6">
+                            <img src="{{ img.image_url }}" alt="Photo {{ loop.index }}" class="gallery-thumb {% if loop.first %}border border-warning border-2{% endif %}" onerror="this.onerror=null;this.src='/static/img/sample/default.jpg';" style="width: 100%; height: 205px; object-fit: cover; border-radius: 10px;">
+                        </div>
+                    {% else %}
+                        <div class="col-12">
+                            <img src="/static/img/sample/default.jpg" alt="Default photo" class="gallery-thumb" style="width: 100%; height: 205px; object-fit: cover; border-radius: 10px;">
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content & Reservation Card -->
+    <div class="row g-4">
+        <!-- Left Column: Details, Host, Room Types, Amenities & Reviews -->
+        <div class="col-lg-8 col-12">
+            <!-- Specs Pill Bar -->
+            <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+                <div class="row text-center g-2">
+                    <div class="col-4 border-end">
+                        <div class="text-muted small">Max Capacity</div>
+                        <div class="fw-bold fs-5 text-dark"><i class="bi bi-people me-1"></i>{{ property.max_guests or 4 }} Guests</div>
+                    </div>
+                    <div class="col-4 border-end">
+                        <div class="text-muted small">Starting Price</div>
+                        <div class="fw-bold fs-5 text-success">{{ property.starting_price|currency_inr }}</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">Property Type</div>
+                        <div class="fw-bold fs-6 text-dark text-truncate">{{ property.type_name }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Host Card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white d-flex flex-row align-items-center gap-3">
+                <div class="stat-icon" style="width: 56px; height: 56px; font-size: 1.6rem; background: rgba(27, 67, 50, 0.1); color: var(--hc-forest); display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                    <i class="bi bi-person-badge-fill"></i>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <h5 class="fw-bold mb-0 text-dark">Hosted by {{ property.host_name }}</h5>
+                        <span class="badge bg-success bg-opacity-25 text-success small rounded-pill">Verified Host</span>
+                    </div>
+                    <small class="text-muted">Host Contact: {{ property.host_phone }} | {{ property.host_email }}</small>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                <h5 class="fw-bold text-dark mb-3">About this Cottage</h5>
+                <p class="text-secondary leading-relaxed mb-0" style="white-space: pre-line;">{{ property.description }}</p>
+            </div>
+
+            <!-- Amenities -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+                <h5 class="fw-bold text-dark mb-3">What this place offers</h5>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for amenity in amenities %}
+                        <div class="amenity-chip border rounded-pill px-3 py-1 bg-light small text-dark d-flex align-items-center gap-2">
+                            <i class="bi bi-check2-circle text-success"></i>
+                            <span>{{ amenity.amenity_name }}</span>
+                        </div>
+                    {% else %}
+                        <p class="text-muted small mb-0">Standard cottage amenities included.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Room Types & Live Availability (fn_available_rooms) -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white" id="room-types-section">
+                <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 border-bottom pb-2">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-door-open-fill text-success me-2"></i>Room Types & Live Availability
+                        </h5>
+                        <small class="text-muted">Checking live availability for stay dates: {{ avail_ci }} to {{ avail_co }}</small>
+                    </div>
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle rounded-pill px-3 py-1 mt-2 mt-sm-0">
+                        <i class="bi bi-lightning-charge me-1"></i>Live fn_available_rooms
+                    </span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover mb-0">
+                        <thead class="table-light small text-muted">
+                            <tr>
+                                <th>Room Type</th>
+                                <th>Max Capacity</th>
+                                <th>Nightly Rate</th>
+                                <th>Live Availability</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rt in room_types %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ rt.type_name }}</div>
+                                        <small class="text-muted">Total inventory: {{ rt.total_rooms }} rooms</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-secondary border">
+                                            <i class="bi bi-people-fill me-1"></i>Up to {{ rt.capacity }} Guests
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-success fs-6">{{ rt.price_per_night|currency_inr }}</span>
+                                        <span class="text-muted small">/ night</span>
+                                    </td>
+                                    <td>
+                                        {% if rt.available_rooms > 0 %}
+                                            <span class="badge bg-success bg-opacity-25 text-success rounded-pill px-3 py-1">
+                                                <i class="bi bi-check-circle-fill me-1"></i>{{ rt.available_rooms }} Available
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-danger bg-opacity-25 text-danger rounded-pill px-3 py-1">
+                                                <i class="bi bi-x-circle-fill me-1"></i>Sold Out
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if rt.available_rooms > 0 %}
+                                            <a href="{{ url_for('booking.book_page', property_id=property.property_id, room_type_id=rt.room_type_id, check_in=avail_ci, check_out=avail_co) }}" class="btn btn-sm btn-hc-primary rounded-pill px-3">
+                                                Book
+                                            </a>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>
+                                                Unavailable
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-muted text-center py-3">No room types configured for this listing.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Verified Guest Reviews -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white" id="reviews-section">
+                <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">
+                            <i class="bi bi-star-fill text-warning me-1"></i>
+                            {{ "%.1f"|format(property.avg_rating) if property.avg_rating > 0 else "No reviews yet" }}
+                        </h5>
+                        <small class="text-muted">{{ property.review_count }} verified stay reviews</small>
+                    </div>
+                </div>
+
+                {% if reviews %}
+                    <div class="d-flex flex-column gap-3">
+                        {% for review in reviews %}
+                            <div class="p-3 rounded-3 bg-light">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-person-circle fs-4 text-secondary"></i>
+                                        <div>
+                                            <div class="fw-bold text-dark small">{{ review.guest_name }}</div>
+                                            <div class="text-muted" style="font-size: 0.72rem;">{{ review.created_at|format_date }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-warning small">
+                                        {% for i in range(review.rating) %}
+                                            <i class="bi bi-star-fill"></i>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <p class="small text-secondary mb-0">{{ review.comment }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-chat-heart fs-1 text-secondary opacity-50 mb-2"></i>
+                        <p class="small mb-0">Be the first guest to book and share your review for this cottage!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column: Sticky Booking Widget -->
+        <div class="col-lg-4 col-12">
+            <div class="sticky-book-card card border-0 shadow-sm rounded-4 p-4 bg-white sticky-top" style="top: 5rem;">
+                <div class="d-flex align-items-baseline justify-content-between mb-3 border-bottom pb-3">
+                    <div>
+                        <span class="fs-3 fw-bold text-success">{{ property.starting_price|currency_inr }}</span>
+                        <span class="text-muted small">/ night starting</span>
+                    </div>
+                    <div class="small fw-semibold text-dark">
+                        <i class="bi bi-star-fill text-warning"></i>
+                        {{ "%.1f"|format(property.avg_rating) if property.avg_rating > 0 else "New" }}
+                    </div>
+                </div>
+
+                <!-- Booking Action Form -->
+                <form action="{{ url_for('booking.book_page') }}" method="GET">
+                    <input type="hidden" name="property_id" value="{{ property.property_id }}">
+                    <div class="mb-3">
+                        <label for="check_in_date" class="form-label small fw-bold text-muted mb-1">Check-in Date</label>
+                        <input type="date" name="check_in" id="check_in_date" class="form-control rounded-3" value="{{ check_in }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="check_out_date" class="form-label small fw-bold text-muted mb-1">Check-out Date</label>
+                        <input type="date" name="check_out" id="check_out_date" class="form-control rounded-3" value="{{ check_out }}" required>
+                    </div>
+
+                    {% if room_types %}
+                    <div class="mb-3">
+                        <label for="room_type_select" class="form-label small fw-bold text-muted mb-1">Select Room Type</label>
+                        <select name="room_type_id" id="room_type_select" class="form-select rounded-3">
+                            {% for rt in room_types %}
+                                <option value="{{ rt.room_type_id }}">
+                                    {{ rt.type_name }} ({{ rt.price_per_night|currency_inr }}/nt, max {{ rt.capacity }}p)
+                                    {% if rt.available_rooms == 0 %} - Sold Out{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="booking-guests" class="form-label small fw-bold text-muted mb-1">Guests</label>
+                        <select name="guests" id="booking-guests" class="form-select rounded-3">
+                            {% for g in range(1, (property.max_guests or 4) + 1) %}
+                                <option value="{{ g }}" {% if request.args.get('guests')|int == g %}selected{% endif %}>{{ g }} Guest{{ 's' if g > 1 else '' }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="submit" id="btn-submit-booking" class="btn btn-hc-primary w-100 py-3 rounded-pill fw-bold fs-6 shadow-sm">
+                        <i class="bi bi-lightning-charge-fill me-1 text-warning"></i> Reserve Now
+                    </button>
+                </form>
+
+                <div class="text-center mt-3">
+                    <small class="text-muted"><i class="bi bi-shield-check text-success me-1"></i> Simulated payment. No real credit card needed.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

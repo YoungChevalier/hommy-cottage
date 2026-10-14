@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}All Bookings | Admin | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Platform Bookings</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">Global Bookings & Payment Ledger</h2>
+            <p class="text-muted small mb-0">System-wide auditing, room allocations, and payment verification across all properties</p>
+        </div>
+        <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill fs-6">{{ bookings|length }} Reservations Total</span>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 table-hc">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 70px;">Ref #</th>
+                        <th>Property & City</th>
+                        <th>Room Allocated</th>
+                        <th>Guest Info</th>
+                        <th>Host</th>
+                        <th>Stay Dates</th>
+                        <th>Total Amount</th>
+                        <th>Payment Method</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bookings %}
+                        <tr>
+                            <td>
+                                <span class="font-monospace fw-bold small text-dark bg-light p-1 px-2 rounded border">
+                                    #{{ b.booking_id }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('search.property_detail', property_id=b.property_id) }}" class="fw-bold text-dark text-decoration-none" target="_blank">
+                                    {{ b.property_name }}
+                                </a>
+                                <small class="text-muted d-block"><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ b.city_name }}</small>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark small">{{ b.room_type }}</div>
+                                <small class="text-muted">Room No: <span class="font-monospace fw-bold text-primary">{{ b.room_number }}</span></small>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark small">{{ b.guest_name }}</div>
+                                <small class="text-muted d-block"><i class="bi bi-envelope me-1"></i>{{ b.guest_email }}</small>
+                                <small class="text-muted"><i class="bi bi-telephone me-1"></i>{{ b.guest_phone }}</small>
+                            </td>
+                            <td>
+                                <div class="small fw-semibold text-dark">{{ b.host_name }}</div>
+                                <small class="text-muted">{{ b.host_email }}</small>
+                            </td>
+                            <td>
+                                <div class="small text-dark fw-semibold">{{ b.check_in|format_date }} &rarr; {{ b.check_out|format_date }}</div>
+                                <small class="text-muted">{{ b.guests }} Guest{{ 's' if b.guests > 1 else '' }}</small>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-success">{{ b.amount|currency_inr if b.amount else '—' }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border text-uppercase" style="font-size: 0.72rem;">
+                                    {{ b.payment_method or 'UPI' }}
+                                </span>
+                                <small class="d-block text-muted" style="font-size: 0.7rem;">Status: {{ b.payment_status|capitalize if b.payment_status else 'Unpaid' }}</small>
+                            </td>
+                            <td>
+                                {% if b.booking_status == 'confirmed' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">Confirmed</span>
+                                {% elif b.booking_status == 'cancelled' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1">Cancelled</span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1">{{ b.booking_status|capitalize }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">No reservations recorded on the platform yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found (404) | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-5 bg-white">
+                <div class="stat-icon mx-auto mb-3" style="width: 72px; height: 72px; font-size: 2.2rem; background: rgba(239, 68, 68, 0.1); color: #dc2626;">
+                    <i class="bi bi-compass"></i>
+                </div>
+                <h1 class="fw-bold text-dark mb-2">404 - Page Not Found</h1>
+                <p class="text-muted small mb-4">
+                    The cottage, destination, or resource you are looking for doesn't exist or has been relocated.
+                </p>
+                <div>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-hc-primary rounded-pill px-4 py-2 fw-semibold">
+                        <i class="bi bi-house-door-fill me-1"></i> Return to Homepage
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

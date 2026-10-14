@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}{{ code|default(404) }} - {{ title|default('Error') }} | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8 col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-5 bg-white">
+                <div class="stat-icon mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2.5rem; background: rgba(239, 68, 68, 0.1); color: #dc2626;">
+                    {% if code == 403 %}
+                        <i class="bi bi-shield-lock-fill"></i>
+                    {% elif code == 404 %}
+                        <i class="bi bi-compass"></i>
+                    {% elif code == 413 %}
+                        <i class="bi bi-cloud-arrow-up-fill"></i>
+                    {% else %}
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    {% endif %}
+                </div>
+                <h1 class="fw-bold text-dark mb-2">{{ code|default(404) }} - {{ title|default('Page Not Found') }}</h1>
+                <p class="text-muted mb-4 fs-6">
+                    {{ message|default('An unexpected error occurred while processing your request. Please return to the homepage or try again.') }}
+                </p>
+                <div class="d-flex justify-content-center gap-2">
+                    <a href="{{ url_for('main.index') }}" class="btn btn-hc-primary rounded-pill px-4 py-2 fw-semibold">
+                        <i class="bi bi-house-door-fill me-1"></i> Return to Homepage
+                    </a>
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
+                        <i class="bi bi-arrow-left me-1"></i> Go Back
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

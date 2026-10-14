@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Property Moderation Queue | Admin | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Listings Moderation Queue</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">Property Listings Moderation Queue</h2>
+            <p class="text-muted small mb-0">Review pending host submissions, verify listing standards, and approve or reject properties with optional feedback</p>
+        </div>
+
+        <!-- Status Filter Tabs -->
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="{{ url_for('admin.pending_listings', status='pending') }}" class="btn {{ 'btn-warning text-dark fw-bold' if current_status == 'pending' else 'btn-outline-dark' }}">
+                <i class="bi bi-clock-history me-1"></i>Pending Queue ({{ counts.pending }})
+            </a>
+            <a href="{{ url_for('admin.pending_listings', status='approved') }}" class="btn {{ 'btn-success fw-bold' if current_status == 'approved' else 'btn-outline-dark' }}">
+                <i class="bi bi-check-circle me-1"></i>Approved ({{ counts.approved }})
+            </a>
+            <a href="{{ url_for('admin.pending_listings', status='rejected') }}" class="btn {{ 'btn-danger fw-bold' if current_status == 'rejected' else 'btn-outline-dark' }}">
+                <i class="bi bi-x-circle me-1"></i>Rejected ({{ counts.rejected }})
+            </a>
+            <a href="{{ url_for('admin.pending_listings', status='all') }}" class="btn {{ 'btn-dark fw-bold' if current_status == 'all' else 'btn-outline-dark' }}">
+                All ({{ counts.total }})
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 table-hc">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;">ID</th>
+                        <th style="min-width: 250px;">Property & Category</th>
+                        <th>Host Information</th>
+                        <th>Destination</th>
+                        <th>Rooms & Pricing</th>
+                        <th>Status & Notes</th>
+                        <th class="text-end" style="min-width: 220px;">Moderation Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in properties %}
+                        <tr>
+                            <td class="font-monospace small text-muted">#{{ p.property_id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <img src="{{ p.primary_image }}" alt="{{ p.name }}" class="rounded-3 border" style="width: 60px; height: 60px; object-fit: cover;">
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ p.name }}</div>
+                                        <span class="badge bg-light text-dark border mb-1" style="font-size: 0.72rem;">{{ p.type_name }}</span>
+                                        <small class="text-muted d-block text-truncate" style="max-width: 200px;">{{ p.address }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="small fw-semibold text-dark">{{ p.host_name }}</div>
+                                <div class="small text-muted"><i class="bi bi-envelope me-1"></i>{{ p.host_email }}</div>
+                                <div class="small text-muted"><i class="bi bi-telephone me-1"></i>{{ p.host_phone }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark small">{{ p.city_name }}</div>
+                                <small class="text-muted">{{ p.state }}</small>
+                            </td>
+                            <td>
+                                <div class="small fw-semibold text-dark">{{ p.room_types_count }} Type{{ 's' if p.room_types_count != 1 else '' }} ({{ p.total_rooms }} Rooms)</div>
+                                {% if p.starting_price > 0 %}
+                                    <span class="fw-bold text-success small">From {{ p.starting_price|currency_inr }}</span>
+                                {% else %}
+                                    <small class="text-muted">No rooms added</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if p.status == 'approved' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Approved
+                                    </span>
+                                {% elif p.status == 'pending' %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1 rounded-pill">
+                                        <i class="bi bi-clock-history me-1"></i>Pending Review
+                                    </span>
+                                {% elif p.status == 'rejected' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1 rounded-pill">
+                                        <i class="bi bi-x-circle-fill me-1"></i>Rejected
+                                    </span>
+                                    {% if p.rejection_note %}
+                                        <div class="small text-danger fst-italic mt-1" style="max-width: 180px;">
+                                            <i class="bi bi-chat-left-dots me-1"></i>"{{ p.rejection_note }}"
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end align-items-center gap-1">
+                                    <a href="{{ url_for('search.property_detail', property_id=p.property_id) }}" class="btn btn-outline-secondary btn-sm rounded-pill" title="Public Preview" target="_blank">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+
+                                    {% if p.status != 'approved' %}
+                                        <!-- Approve Action (POST only) -->
+                                        <form action="{{ url_for('admin.approve_property', property_id=p.property_id) }}" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-success btn-sm rounded-pill px-3 fw-semibold" title="Approve this property">
+                                                <i class="bi bi-check-lg me-1"></i>Approve
+                                            </button>
+                                        </form>
+                                    {% endif %}
+
+                                    {% if p.status != 'rejected' %}
+                                        <!-- Reject Trigger Modal -->
+                                        <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-2" data-bs-toggle="modal" data-bs-target="#rejectModal{{ p.property_id }}" title="Reject Listing with Note">
+                                            <i class="bi bi-x-lg me-1"></i>Reject
+                                        </button>
+
+                                        <!-- Rejection Modal -->
+                                        <div class="modal fade" id="rejectModal{{ p.property_id }}" tabindex="-1" aria-labelledby="rejectModalLabel{{ p.property_id }}" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered text-start">
+                                                <div class="modal-content rounded-4 border-0 shadow">
+                                                    <div class="modal-header bg-danger text-white rounded-top-4">
+                                                        <h5 class="modal-title fw-bold" id="rejectModalLabel{{ p.property_id }}">
+                                                            <i class="bi bi-shield-x me-2"></i>Reject Property Listing
+                                                        </h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <form action="{{ url_for('admin.reject_property', property_id=p.property_id) }}" method="POST">
+                                                        <div class="modal-body p-4">
+                                                            <p class="small text-muted mb-3">
+                                                                You are rejecting <strong>{{ p.name }}</strong> submitted by <strong>{{ p.host_name }}</strong>.
+                                                            </p>
+                                                            <label for="note{{ p.property_id }}" class="form-label small fw-bold text-dark">
+                                                                Optional Rejection Note / Feedback:
+                                                            </label>
+                                                            <textarea name="rejection_note" id="note{{ p.property_id }}" rows="3" class="form-control rounded-3" placeholder="e.g. Missing high-res photos, inaccurate address details, or pricing adjustments required..."></textarea>
+                                                            <small class="text-muted d-block mt-2">
+                                                                This note will be saved with the property and visible to the host for revisions.
+                                                            </small>
+                                                        </div>
+                                                        <div class="modal-footer bg-light rounded-bottom-4">
+                                                            <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                                                            <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">
+                                                                <i class="bi bi-x-circle-fill me-1"></i>Confirm Rejection
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox display-4 text-secondary mb-2 d-block"></i>
+                                <h5 class="fw-bold text-dark">No properties in this view</h5>
+                                <p class="small text-muted mb-0">All submitted properties have been processed.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

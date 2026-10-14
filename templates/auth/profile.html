@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile | Hommy Cottage{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-12">
+            <!-- Profile Header Card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white d-flex flex-row align-items-center gap-3">
+                <div class="stat-icon" style="width: 64px; height: 64px; font-size: 2rem;">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <h4 class="fw-bold mb-0 text-dark">{{ user.full_name }}</h4>
+                        <span class="badge bg-success text-uppercase small">{{ user.role }}</span>
+                    </div>
+                    <div class="text-muted small">
+                        <span><i class="bi bi-envelope me-1"></i>{{ user.email }}</span> &bull; 
+                        <span><i class="bi bi-telephone me-1"></i>{{ user.phone }}</span> &bull;
+                        <span>Member since {{ user.created_at|format_date }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Settings Forms -->
+            <div class="row g-4">
+                <!-- Personal Info Update -->
+                <div class="col-md-6 col-12">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                        <h5 class="fw-bold text-dark mb-3">Edit Details</h5>
+                        <form action="{{ url_for('auth.profile') }}" method="POST">
+                            <input type="hidden" name="action" value="update_info">
+
+                            <div class="mb-3">
+                                <label for="prof-name" class="form-label small fw-bold text-muted">Full Name</label>
+                                <input type="text" name="full_name" id="prof-name" value="{{ user.full_name }}" class="form-control rounded-3" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">Email (Read Only)</label>
+                                <input type="email" value="{{ user.email }}" class="form-control rounded-3 bg-light" disabled>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="prof-phone" class="form-label small fw-bold text-muted">Phone Number</label>
+                                <input type="tel" name="phone" id="prof-phone" value="{{ user.phone }}" class="form-control rounded-3" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-hc-primary btn-sm rounded-pill px-4 py-2 fw-semibold">
+                                Save Profile
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Password Change -->
+                <div class="col-md-6 col-12">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                        <h5 class="fw-bold text-dark mb-3">Change Password</h5>
+                        <form action="{{ url_for('auth.profile') }}" method="POST">
+                            <input type="hidden" name="action" value="change_password">
+
+                            <div class="mb-3">
+                                <label for="current-pwd" class="form-label small fw-bold text-muted">Current Password</label>
+                                <input type="password" name="current_password" id="current-pwd" class="form-control rounded-3" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="new-pwd" class="form-label small fw-bold text-muted">New Password (min 6 chars)</label>
+                                <input type="password" name="new_password" id="new-pwd" class="form-control rounded-3" required>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="confirm-pwd" class="form-label small fw-bold text-muted">Confirm New Password</label>
+                                <input type="password" name="confirm_password" id="confirm-pwd" class="form-control rounded-3" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-outline-dark btn-sm rounded-pill px-4 py-2 fw-semibold">
+                                Update Password
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
