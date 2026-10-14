@@ -10,6 +10,8 @@ from config import Config
 from db import init_app_db
 from auth_utils import get_current_user
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 # Import Blueprints
 from routes.search import search_bp
 from routes.main import main_bp
@@ -26,6 +28,9 @@ def create_app(config_class=Config):
     """Application factory for Hommy Cottage."""
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    # Reverse proxy support for custom domains and HTTPS behind Render/Cloudflare
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     # Initialize Database teardown handler
     init_app_db(app)
